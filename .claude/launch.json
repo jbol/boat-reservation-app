@@ -3,10 +3,11 @@
   "configurations": [
     {
       "name": "dev",
-      "runtimeExecutable": "bash",
+      "runtimeExecutable": "/Users/johnbolorinos/.nvm/versions/node/v22.22.3/bin/node",
       "runtimeArgs": [
-        "-c",
-        "cd /Users/johnbolorinos/Documents/boat-reservation-app && export PATH=\"/Users/johnbolorinos/.nvm/versions/node/v22.22.3/bin:$PATH\" && npm run dev"
+        "/Users/johnbolorinos/Documents/boat-reservation-app/node_modules/next/dist/bin/next",
+        "dev",
+        "/Users/johnbolorinos/Documents/boat-reservation-app"
       ],
       "port": 3000
     }
