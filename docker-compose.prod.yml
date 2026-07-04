@@ -1,0 +1,55 @@
+# Production stack for a VPS: MySQL + one-off migrations + the app.
+# Required env vars (put them in .env next to this file):
+#   MYSQL_ROOT_PASSWORD, MYSQL_PASSWORD, ADMIN_PASSWORD, ADMIN_COOKIE_SECRET
+#
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Seed the timetables once after first boot:
+#   docker compose -f docker-compose.prod.yml run --rm migrate npx prisma db seed
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: tabarca
+      MYSQL_USER: tabarca
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  migrate:
+    build:
+      context: .
+      target: builder
+    command: npx prisma migrate deploy
+    environment:
+      DATABASE_URL: mysql://tabarca:${MYSQL_PASSWORD}@db:3306/tabarca
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    build:
+      context: .
+      target: runner
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: mysql://tabarca:${MYSQL_PASSWORD}@db:3306/tabarca
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_COOKIE_SECRET: ${ADMIN_COOKIE_SECRET}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  db-data:

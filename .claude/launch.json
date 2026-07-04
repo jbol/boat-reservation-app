@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/johnbolorinos/Documents/boat-reservation-app && export PATH=\"/Users/johnbolorinos/.nvm/versions/node/v22.22.3/bin:$PATH\" && npm run dev"
+      ],
+      "port": 3000
+    }
+  ]
+}

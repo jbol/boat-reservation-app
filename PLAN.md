@@ -53,8 +53,8 @@ For any operator without decent online booking who wants one: we hold their inve
 
 ## 4. Architecture
 
-- **Next.js (App Router) + TypeScript** — one codebase for the public comparison/booking UI, the admin dashboard, and API routes. Tailwind for UI. Vercel for hosting + cron.
-- **Postgres + Prisma** (Neon or Supabase for managed hosting).
+- **Next.js (App Router) + TypeScript** — one codebase for the public comparison/booking UI, the admin dashboard, and API routes. Tailwind for UI.
+- **MySQL + Prisma** — changed from the original Postgres pick: the user hosts on Hostinger, whose managed web-app hosting includes MySQL, so one engine works everywhere (Docker locally, managed MySQL or VPS in prod). See `docs/DEPLOY_HOSTINGER.md`.
 - **Adapter pattern** at the core — each operator/tier implements:
 
   ```ts
@@ -94,11 +94,11 @@ IntegrationAccount operator, kind (woocommerce | getyourguide | …), credential
 
 ## 6. Roadmap
 
-### Phase 1 — MVP (Tier 1 only)
-1. Scaffold Next.js + Prisma + Postgres; seed Kontiki + 2 Santa Pola operators with summer timetables.
-2. Public page: pick a date → all sailings that day across operators (time, port, price, duration) → "Book with X" deep link, intent recorded.
-3. Post-handoff flow: email asking user to paste booking ref → reservation marked confirmed.
-4. Admin dashboard: list/filter reservations, manual add/edit, mark confirmed/cancelled.
+### Phase 1 — MVP (Tier 1 only) — ✅ built 2026-07-04
+1. ✅ Scaffold Next.js 16 + Prisma + MySQL; seeded Kontiki (verified timetable) + Transtabarca (verified) + Tabarkeras (listed, timetable unverified).
+2. ✅ Public page: pick a date → all sailings that day across operators → "Book with X" deep link, intent recorded.
+3. ✅ Post-handoff flow: reservation page asks the customer to paste their booking ref → marked confirmed. (Email notifications still pending — Phase 2.)
+4. ✅ Admin dashboard: list/filter reservations, inline status/ref updates, manual entry.
 
 ### Phase 2 — Live availability + revenue (Tier 2)
 5. GetYourGuide Partner API / Civitatis affiliate for the Tabarca products → live availability + commission on bookings.

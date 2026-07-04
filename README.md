@@ -1,30 +1,47 @@
 # Tabarca Boat Reservation App
 
-One place to see every boat heading to Isla de Tabarca (from Alicante, Santa Pola, …), compare schedules and prices, and book — with bookings fulfilled through the operators' **existing** booking systems (Kontiki, Tabarkeras, Transtabarca, …), plus a dashboard to manage the reservations made through the app.
+One place to see every boat heading to Isla de Tabarca (from Alicante and Santa Pola), compare schedules and prices, and book — with bookings fulfilled through the operators' **existing** systems (Kontiki, Transtabarca, Tabarkeras, …), plus an admin dashboard to manage the reservations made through the app.
 
 ## Status
 
-🚧 **Planning.** No application code yet. Start with [PLAN.md](PLAN.md) — it covers the operator landscape, the tiered integration strategy, proposed architecture, data model, and a phased roadmap.
+✅ **Phase 1 (MVP) built** — sailing comparison, deep-link booking hand-off with reservation tracking, admin dashboard, ES/EN. See [PLAN.md](PLAN.md) for the full strategy and roadmap, and [docs/DEPLOY_HOSTINGER.md](docs/DEPLOY_HOSTINGER.md) for hosting.
 
-## The core idea
+## How it works
 
-Small Tabarca boat operators each have their own website and booking flow, and none of them publish a public API. Instead of replacing those systems, this app:
+1. **Compare** — pick a date, see all sailings across operators (seeded from the operators' published summer 2026 timetables).
+2. **Book** — the app records a reservation *intent*, then hands off to the operator's own checkout (they're the merchant of record). Back on the app, the customer saves their booking reference and the reservation becomes *confirmed*.
+3. **Manage** — `/admin` (password-protected) lists every reservation with filters, status updates, and manual entry for phone/counter bookings.
 
-1. **Aggregates** schedules and prices across operators in one comparison view.
-2. **Hands off** the actual booking to the operator's own checkout (deep links first, real API integrations where partnerships allow).
-3. **Tracks** reservations made through the app so they can be managed in one dashboard.
+## Stack
 
-## Proposed stack (open to change)
+Next.js 16 (App Router, server components + server actions, Turbopack) · TypeScript · Tailwind 4 · Prisma 6 · MySQL 8 (matches Hostinger's managed hosting) · Docker for local dev DB and VPS deploys.
 
-- Next.js (App Router) + TypeScript, Tailwind CSS
-- Postgres + Prisma
-- Deployed on Vercel
-- i18n (ES/EN) and mobile-first from day one — the audience is tourists on phones
+## Local development
 
-## Repo layout (planned)
+Prereqs: Docker Desktop, Node 22 (`nvm use` picks it up from `.nvmrc`).
+
+```bash
+npm install
+docker compose up -d --wait       # MySQL on localhost:3307
+npx prisma migrate dev            # create schema
+npx prisma db seed                # load operators + summer 2026 timetables
+npm run dev                       # http://localhost:3000
+```
+
+Admin lives at `/admin` — password is `ADMIN_PASSWORD` in `.env` (dev default: `tabarca-admin`).
+
+## Layout
 
 ```
-PLAN.md          ← the plan: read this first
-docs/            ← research notes, operator integration notes (future)
-app/ ...         ← Next.js app (future)
+PLAN.md                  strategy, operator research, roadmap
+docs/DEPLOY_HOSTINGER.md hosting guide (managed web-app + VPS paths)
+prisma/                  schema, migrations, seed (real timetables, transcribed 2026-07-04)
+lib/                     prisma client, i18n, server actions, operator adapters, admin auth
+app/                     / (compare) · /book/[sailingId] · /r/[id] (hand-off & status) · /admin
+Dockerfile + docker-compose.prod.yml   VPS deployment
 ```
+
+## Caveats
+
+- Timetables/prices are transcribed seed data, not live feeds — verify against operator sites before relying on them (each operator row records `scheduleCheckedAt`). Live availability arrives with the Tier 2/3 integrations in [PLAN.md](PLAN.md).
+- Bookings are completed on the operators' sites; this app tracks them but is not the merchant.

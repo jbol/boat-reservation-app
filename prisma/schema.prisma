@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// A departure harbour (Alicante, Santa Pola) or Tabarca itself.
+model Port {
+  id         String  @id
+  slug       String  @unique
+  nameEs     String
+  nameEn     String
+  routesFrom Route[] @relation("RouteOrigin")
+}
+
+// A boat company. `tier` tracks how deep the integration is (see PLAN.md):
+// deep-link hand-off today, affiliate/API/own-inventory later.
+model Operator {
+  id                String    @id
+  slug              String    @unique
+  name              String
+  homeUrl           String
+  bookingUrl        String
+  blurbEs           String?   @db.Text
+  blurbEn           String?   @db.Text
+  tier              String    @default("deeplink")
+  // False = we know the operator exists but haven't transcribed a timetable we trust.
+  scheduleVerified  Boolean   @default(false)
+  scheduleCheckedAt DateTime?
+  routes            Route[]
+}
+
+model Route {
+  id             String     @id
+  operatorId     String
+  operator       Operator   @relation(fields: [operatorId], references: [id])
+  originPortId   String
+  originPort     Port       @relation("RouteOrigin", fields: [originPortId], references: [id])
+  destinationEs  String     @default("Isla de Tabarca")
+  destinationEn  String     @default("Tabarca Island")
+  durationMin    Int
+  durationNoteEs String?
+  durationNoteEn String?
+  // Both current operators sell open returns — return boats are informational, not booked.
+  returnNoteEs   String?    @db.Text
+  returnNoteEn   String?    @db.Text
+  fares          FareType[]
+  sailings       Sailing[]
+}
+
+model FareType {
+  id         String  @id
+  routeId    String
+  route      Route   @relation(fields: [routeId], references: [id])
+  code       String // adult | child | infant
+  labelEs    String
+  labelEn    String
+  priceCents Int // round-trip online price
+  currency   String  @default("EUR")
+  noteEs     String?
+  noteEn     String?
+
+  @@unique([routeId, code])
+}
+
+// One outbound departure on one day. Times are Europe/Madrid local, stored as
+// strings ("YYYY-MM-DD", "HH:MM") to keep timetable data timezone-proof.
+model Sailing {
+  id            String        @id @default(cuid())
+  routeId       String
+  route         Route         @relation(fields: [routeId], references: [id])
+  dateKey       String        @db.VarChar(10)
+  departureTime String        @db.VarChar(5)
+  status        SailingStatus @default(SCHEDULED)
+  reservations  Reservation[]
+
+  @@unique([routeId, dateKey, departureTime])
+  @@index([dateKey])
+}
+
+model Customer {
+  id           String        @id @default(cuid())
+  name         String
+  email        String
+  phone        String?
+  locale       String        @default("es")
+  reservations Reservation[]
+
+  @@index([email])
+}
+
+model Reservation {
+  id            String            @id @default(cuid())
+  sailingId     String
+  sailing       Sailing           @relation(fields: [sailingId], references: [id])
+  customerId    String
+  customer      Customer          @relation(fields: [customerId], references: [id])
+  adults        Int               @default(1)
+  children      Int               @default(0)
+  infants       Int               @default(0)
+  status        ReservationStatus @default(INTENT)
+  source        ReservationSource @default(HANDOFF)
+  // Booking reference issued by the operator's own system after hand-off.
+  externalRef   String?
+  estTotalCents Int?
+  notes         String?           @db.Text
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum SailingStatus {
+  SCHEDULED
+  CANCELLED
+}
+
+enum ReservationStatus {
+  INTENT
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum ReservationSource {
+  HANDOFF
+  MANUAL
+}

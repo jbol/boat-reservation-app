@@ -1,0 +1,19 @@
+# Local development database. App runs on the host (npm run dev).
+services:
+  db:
+    image: mysql:8.4
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: tabarca
+      MYSQL_DATABASE: tabarca
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-ptabarca"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+
+volumes:
+  db-data:
