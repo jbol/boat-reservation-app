@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Builds
+.next/
+out/
+dist/
+build/
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+
+# Logs & caches
+*.log
+.cache/
+.turbo/
+.vercel/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
