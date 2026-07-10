@@ -108,6 +108,9 @@ export default async function AdminPage({
                     {r.sailing.dateKey} · {r.sailing.departureTime}
                   </p>
                   <p className="text-slate-500">{r.sailing.route.operator.name}</p>
+                  {r.sailing.status === "CANCELLED" && (
+                    <p className="text-xs font-bold text-red-600">SAILING CANCELLED</p>
+                  )}
                 </td>
                 <td className="px-3 py-3">
                   <p className="font-medium">{r.customer.name}</p>

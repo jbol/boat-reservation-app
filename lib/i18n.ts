@@ -63,6 +63,16 @@ const dictionaries = {
     children: "Niños",
     infants: "Bebés",
     backHome: "← Volver a los horarios",
+    navFind: "Mis reservas",
+    findTitle: "Encuentra tus reservas",
+    findIntro:
+      "Escribe tu email y te enviaremos los enlaces de tus reservas activas.",
+    findSubmit: "Enviarme mis reservas",
+    findSent:
+      "Si hay reservas asociadas a ese email, te hemos enviado los enlaces. Revisa también la carpeta de spam.",
+    sailingCancelledBanner:
+      "La naviera ha cancelado esta salida (habitualmente por el estado del mar). Si ya compraste billetes, contacta con la naviera para el cambio o reembolso según su política.",
+    findAnotherBoat: "Buscar otra salida",
     scheduleDisclaimer:
       "Los horarios y precios provienen de las webs oficiales de las navieras (julio 2026) y pueden cambiar sin previo aviso. Confírmalos siempre al comprar.",
   },
@@ -120,6 +130,15 @@ const dictionaries = {
     children: "Children",
     infants: "Infants",
     backHome: "← Back to schedules",
+    navFind: "My bookings",
+    findTitle: "Find your reservations",
+    findIntro: "Enter your email and we'll send you links to your active reservations.",
+    findSubmit: "Email me my bookings",
+    findSent:
+      "If there are reservations for that email, we've sent the links. Check your spam folder too.",
+    sailingCancelledBanner:
+      "The operator has cancelled this sailing (usually due to sea conditions). If you already bought tickets, contact the operator about rebooking or a refund under their policy.",
+    findAnotherBoat: "Find another boat",
     scheduleDisclaimer:
       "Schedules and prices come from the operators' official websites (July 2026) and can change without notice. Always confirm when buying.",
   },

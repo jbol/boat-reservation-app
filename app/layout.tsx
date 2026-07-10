@@ -39,6 +39,10 @@ export default async function RootLayout({
               ⛵ {d.appName}
             </Link>
             <nav className="flex items-center gap-3 text-sm">
+              <Link href="/find" className="text-slate-500 hover:text-slate-800">
+                {d.navFind}
+              </Link>
+              <span className="text-slate-300">|</span>
               <a
                 href="/lang/es"
                 className={locale === "es" ? "font-bold text-sky-800" : "text-slate-500 hover:text-slate-800"}

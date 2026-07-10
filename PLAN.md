@@ -97,7 +97,7 @@ IntegrationAccount operator, kind (woocommerce | getyourguide | …), credential
 ### Phase 1 — MVP (Tier 1 only) — ✅ built 2026-07-04
 1. ✅ Scaffold Next.js 16 + Prisma + MySQL; seeded Kontiki (verified timetable) + Transtabarca (verified) + Tabarkeras (listed, timetable unverified).
 2. ✅ Public page: pick a date → all sailings that day across operators → "Book with X" deep link, intent recorded.
-3. ✅ Post-handoff flow: reservation page asks the customer to paste their booking ref → marked confirmed. (Email notifications still pending — Phase 2.)
+3. ✅ Post-handoff flow: reservation page asks the customer to paste their booking ref → marked confirmed. Email notifications (intent + confirmation) and `/find` booking lookup added 2026-07-10.
 4. ✅ Admin dashboard: list/filter reservations, inline status/ref updates, manual entry.
 
 ### Phase 2 — Live availability + revenue (Tier 2)
@@ -106,7 +106,7 @@ IntegrationAccount operator, kind (woocommerce | getyourguide | …), credential
 
 ### Phase 3 — First direct integration (Tier 3)
 7. Approach Kontiki about WooCommerce REST keys / webhook plugin; build the adapter; bookings confirm automatically.
-8. Weather-cancellation notifications to affected reservations.
+8. ✅ (built early, 2026-07-10) Weather-cancellation flow: admin cancels a sailing → affected customers are emailed; reservation pages show the cancellation and link to alternative boats.
 
 ### Phase 4 — Own inventory (Tier 4)
 9. Stripe checkout + manifest views for operators who want us as their booking system.

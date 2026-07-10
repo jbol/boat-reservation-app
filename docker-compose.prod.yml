@@ -45,6 +45,13 @@ services:
       DATABASE_URL: mysql://tabarca:${MYSQL_PASSWORD}@db:3306/tabarca
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       ADMIN_COOKIE_SECRET: ${ADMIN_COOKIE_SECRET}
+      # Email (optional — without SMTP_HOST, emails are logged, not sent)
+      APP_BASE_URL: ${APP_BASE_URL:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-}
     depends_on:
       db:
         condition: service_healthy

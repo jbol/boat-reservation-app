@@ -92,7 +92,19 @@ export default async function ReservationPage({
         </dl>
       </section>
 
-      {reservation.status === "INTENT" && (
+      {sailing.status === "CANCELLED" && reservation.status !== "CANCELLED" && (
+        <section className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
+          <p className="font-semibold">{d.sailingCancelledBanner}</p>
+          <Link
+            href={`/?date=${sailing.dateKey}`}
+            className="mt-3 inline-block rounded-lg bg-sky-700 px-4 py-2 font-semibold text-white hover:bg-sky-800"
+          >
+            {d.findAnotherBoat}
+          </Link>
+        </section>
+      )}
+
+      {reservation.status === "INTENT" && sailing.status !== "CANCELLED" && (
         <section className="space-y-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
           <h2 className="text-lg font-semibold text-amber-900">{d.oneStepLeft}</h2>
           <ol className="list-decimal space-y-4 pl-5 text-sm text-amber-900">

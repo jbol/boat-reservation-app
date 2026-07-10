@@ -10,7 +10,8 @@ One place to see every boat heading to Isla de Tabarca (from Alicante and Santa 
 
 1. **Compare** — pick a date, see all sailings across operators (seeded from the operators' published summer 2026 timetables).
 2. **Book** — the app records a reservation *intent*, then hands off to the operator's own checkout (they're the merchant of record). Back on the app, the customer saves their booking reference and the reservation becomes *confirmed*.
-3. **Manage** — `/admin` (password-protected) lists every reservation with filters, status updates, and manual entry for phone/counter bookings.
+3. **Manage** — `/admin` (password-protected) lists every reservation with filters, status updates, manual entry for phone/counter bookings, and sailing cancellation (weather happens on this crossing) that emails everyone affected.
+4. **Notify** — customers get their reservation link by email at intent and on confirmation, and `/find` re-sends links for an email address.
 
 ## Stack
 
@@ -29,6 +30,8 @@ npm run dev                       # http://localhost:3000
 ```
 
 Admin lives at `/admin` — password is `ADMIN_PASSWORD` in `.env` (dev default: `tabarca-admin`).
+
+Emails print to the dev-server console unless `SMTP_*` is set in `.env` (see `.env.example`).
 
 ## Layout
 

@@ -3,9 +3,16 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
-import { ReservationStatus } from "@prisma/client";
+import { ReservationStatus, SailingStatus } from "@prisma/client";
 import { prisma } from "./prisma";
 import { ADMIN_COOKIE, passwordMatches, requireAdmin, sessionToken } from "./adminAuth";
+import { madridTodayKey } from "./format";
+import {
+  sendLookupEmail,
+  sendReservationConfirmedEmail,
+  sendReservationIntentEmail,
+  sendSailingCancelledEmail,
+} from "./email";
 
 function count(formData: FormData, name: string): number {
   const n = Number(formData.get(name) ?? 0);
@@ -81,6 +88,7 @@ export async function createReservation(formData: FormData) {
     },
   });
 
+  await sendReservationIntentEmail(reservation.id);
   redirect(`/r/${reservation.id}`);
 }
 
@@ -88,10 +96,11 @@ export async function attachBookingRef(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const externalRef = String(formData.get("externalRef") ?? "").trim();
   if (id && externalRef) {
-    await prisma.reservation.updateMany({
+    const updated = await prisma.reservation.updateMany({
       where: { id, status: "INTENT" },
       data: { status: "CONFIRMED", externalRef },
     });
+    if (updated.count > 0) await sendReservationConfirmedEmail(id);
   }
   revalidatePath(`/r/${id}`);
   redirect(`/r/${id}`);
@@ -140,6 +149,12 @@ export async function adminUpdateReservation(formData: FormData) {
 
   if (!id || !(status in ReservationStatus)) return;
 
+  const existing = await prisma.reservation.findUnique({
+    where: { id },
+    select: { status: true },
+  });
+  if (!existing) return;
+
   await prisma.reservation.update({
     where: { id },
     data: {
@@ -147,6 +162,10 @@ export async function adminUpdateReservation(formData: FormData) {
       ...(externalRef ? { externalRef } : {}),
     },
   });
+  // Confirming from admin also emails the customer their confirmation + link.
+  if (existing.status !== "CONFIRMED" && status === "CONFIRMED") {
+    await sendReservationConfirmedEmail(id);
+  }
   revalidatePath("/admin");
 }
 
@@ -190,4 +209,79 @@ export async function adminCreateReservation(formData: FormData) {
   });
 
   redirect("/admin");
+}
+
+// ---------------------------------------------------------------------------
+// Booking lookup & sailing cancellation
+// ---------------------------------------------------------------------------
+
+/**
+ * Anti-enumeration: always redirects to the same "sent" state and only ever
+ * emails the address itself — reservation links are never displayed.
+ */
+export async function requestReservationLinks(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+
+  if (email.includes("@")) {
+    const reservations = await prisma.reservation.findMany({
+      where: {
+        customer: { email },
+        status: { in: ["INTENT", "CONFIRMED"] },
+        sailing: { dateKey: { gte: madridTodayKey() } },
+      },
+      include: {
+        customer: true,
+        sailing: { include: { route: { include: { operator: true } } } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    });
+
+    if (reservations.length > 0) {
+      const locale = reservations[0].customer.locale === "en" ? "en" : "es";
+      await sendLookupEmail(
+        email,
+        locale,
+        reservations.map((r) => ({
+          id: r.id,
+          dateKey: r.sailing.dateKey,
+          departureTime: r.sailing.departureTime,
+          operatorName: r.sailing.route.operator.name,
+          status: r.status,
+        })),
+      );
+    }
+  }
+
+  redirect("/find?sent=1");
+}
+
+export async function adminSetSailingStatus(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  const status = String(formData.get("status") ?? "");
+  const notify = formData.get("notify") === "on";
+
+  if (!id || !(status in SailingStatus)) return;
+
+  const sailing = await prisma.sailing.findUnique({
+    where: { id },
+    select: { dateKey: true },
+  });
+  if (!sailing) return;
+
+  await prisma.sailing.update({ where: { id }, data: { status: status as SailingStatus } });
+
+  if (status === "CANCELLED" && notify) {
+    const affected = await prisma.reservation.findMany({
+      where: { sailingId: id, status: { in: ["INTENT", "CONFIRMED"] } },
+      select: { id: true },
+    });
+    for (const r of affected) {
+      await sendSailingCancelledEmail(r.id);
+    }
+  }
+
+  revalidatePath("/admin/sailings");
+  redirect(`/admin/sailings?date=${sailing.dateKey}`);
 }

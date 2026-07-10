@@ -34,7 +34,17 @@ Runs next to your existing websites on the plan you already pay for.
    DATABASE_URL=mysql://DB_USER:DB_PASSWORD@DB_HOST:3306/DB_NAME
    ADMIN_PASSWORD=<a strong password for /admin>
    ADMIN_COOKIE_SECRET=<run: openssl rand -hex 32>
+   APP_BASE_URL=https://tabarca.yourdomain.com
+   SMTP_HOST=smtp.hostinger.com
+   SMTP_PORT=465
+   SMTP_USER=reservas@yourdomain.com
+   SMTP_PASS=<mailbox password>
+   MAIL_FROM=Tabarca Boats <reservas@yourdomain.com>
    ```
+
+   For the SMTP values, create a mailbox first: hPanel → **Emails** → your
+   domain → add `reservas@yourdomain.com` (included with your plan). Without
+   the SMTP settings the app still works — emails are logged instead of sent.
 
 5. **Run migrations + seed (one time, from your Mac).** hPanel → Databases →
    **Remote MySQL** → allow your current IP. Then, in the project folder:
@@ -72,6 +82,12 @@ Full control; also the fallback if your plan doesn't offer web apps.
    MYSQL_PASSWORD=<random>
    ADMIN_PASSWORD=<strong password for /admin>
    ADMIN_COOKIE_SECRET=<run: openssl rand -hex 32>
+   APP_BASE_URL=https://tabarca.yourdomain.com
+   SMTP_HOST=smtp.hostinger.com
+   SMTP_PORT=465
+   SMTP_USER=reservas@yourdomain.com
+   SMTP_PASS=<mailbox password>
+   MAIL_FROM=Tabarca Boats <reservas@yourdomain.com>
    EOF
    ```
 
