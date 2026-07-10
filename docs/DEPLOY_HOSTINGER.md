@@ -121,6 +121,49 @@ choice if you'd rather click than SSH.
 
 ---
 
+## Connecting the domain (tabarcaboats.com)
+
+The domain is registered at Hostinger and already uses Hostinger nameservers,
+so everything happens in hPanel and takes effect in minutes.
+
+**On managed Web Apps hosting (Path A):**
+
+1. hPanel → **Websites** → open the web app's dashboard (it starts life on a
+   temporary `*.hostingersite.com` domain) → **Domains** → *Connect/Change
+   domain* → pick **tabarcaboats.com** from the account.
+2. If hPanel says the domain is already in use by another website (a parked or
+   placeholder site), unassign that website first in the Websites list.
+3. DNS records update automatically (same account, same nameservers). SSL
+   (Let's Encrypt) is issued automatically — turn on **Force HTTPS** under the
+   website's SSL settings. `www.tabarcaboats.com` redirects to the apex.
+
+**On a VPS (Path B):** hPanel → Domains → tabarcaboats.com → **DNS Zone
+Editor**: set the `@` A record to the VPS IP (delete the parking A records)
+and point `www` the same way. Caddy/Coolify then issues the certificate for
+`tabarcaboats.com` on first request.
+
+**After connecting, in the app's environment:**
+
+```
+APP_BASE_URL=https://tabarcaboats.com
+```
+
+**Email:** there are no MX records yet. hPanel → **Emails** →
+tabarcaboats.com → create `reservas@tabarcaboats.com` — Hostinger adds
+MX/SPF/DKIM automatically. Then set:
+
+```
+SMTP_HOST=smtp.hostinger.com
+SMTP_PORT=465
+SMTP_USER=reservas@tabarcaboats.com
+SMTP_PASS=<mailbox password>
+MAIL_FROM=Tabarca Boats <reservas@tabarcaboats.com>
+```
+
+Restart/redeploy the app after changing environment variables.
+
+---
+
 ## Which one should you pick?
 
 - Already on **Business/Cloud**: Path A. Zero extra cost, zero server
