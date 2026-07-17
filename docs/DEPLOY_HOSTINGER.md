@@ -10,11 +10,12 @@ wizard):
   `git archive HEAD` plus a production `.env` added at the archive root.
   Hostinger auto-detects Next.js, runs `npm install` (which triggers
   `prisma generate`) and `next build`, then serves the app.
-- **Database:** MySQL `u823234041_tabarca` (user `u823234041_tabarca`).
-  The app connects via host **`srv2070.hstgr.io:3306`** — NOT `localhost`;
-  the Node runtime cannot reach MySQL locally. Remote connections are
-  enabled. Migrations/seed run from the dev machine with `prisma migrate
-  deploy` against that same host.
+- **Database:** the account's managed MySQL (name/user of the form
+  `<account>_tabarca`; the exact values live in hPanel → Databases and in the
+  private ops note, not in this public repo). The app connects via the
+  database's **`srvNNNN.hstgr.io:3306`** host — NOT `localhost`; the Node
+  runtime cannot reach MySQL locally. Migrations/seed run from the dev machine
+  with `prisma migrate deploy` against that same host.
 - **Secrets** (DB password, `ADMIN_PASSWORD`, `ADMIN_COOKIE_SECRET`) live
   only in the baked `.env` inside the deploy archive — never in this repo.
 - **Redeploy** = rebuild the archive from the current commit (same `.env`)
