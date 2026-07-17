@@ -1,5 +1,33 @@
 # Deploying to Hostinger
 
+## ✅ Current production setup (first deployed 2026-07-17)
+
+The app is **live at https://tabarcaboats.com** on the Business Web Hosting
+plan, deployed via the **Hostinger MCP connector** (no GitHub link, no hPanel
+wizard):
+
+- **Deploy method:** `hosting_deployJsApplication` with a zip built from
+  `git archive HEAD` plus a production `.env` added at the archive root.
+  Hostinger auto-detects Next.js, runs `npm install` (which triggers
+  `prisma generate`) and `next build`, then serves the app.
+- **Database:** MySQL `u823234041_tabarca` (user `u823234041_tabarca`).
+  The app connects via host **`srv2070.hstgr.io:3306`** — NOT `localhost`;
+  the Node runtime cannot reach MySQL locally. Remote connections are
+  enabled. Migrations/seed run from the dev machine with `prisma migrate
+  deploy` against that same host.
+- **Secrets** (DB password, `ADMIN_PASSWORD`, `ADMIN_COOKIE_SECRET`) live
+  only in the baked `.env` inside the deploy archive — never in this repo.
+- **Redeploy** = rebuild the archive from the current commit (same `.env`)
+  and call the deploy tool again. Env-only changes still need a redeploy,
+  since the `.env` ships inside the archive.
+- **Still pending:** `reservas@tabarcaboats.com` mailbox (Business Email
+  plan, manual hPanel step), then set the `SMTP_*` vars and redeploy to
+  switch emails from console-logging to real sending.
+
+The sections below are kept as the general reference for alternative paths.
+
+---
+
 Two ways to run this app on Hostinger, depending on the plan you have. Check
 first: log in to hPanel and look at your hosting plan name.
 
