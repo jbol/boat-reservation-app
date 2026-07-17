@@ -33,14 +33,29 @@ Admin lives at `/admin` — password is `ADMIN_PASSWORD` in `.env` (dev default:
 
 Emails print to the dev-server console unless `SMTP_*` is set in `.env` (see `.env.example`).
 
+## Testing & CI
+
+```bash
+npm run lint        # eslint
+npm run typecheck   # next typegen + tsc --noEmit
+npm run test:unit   # vitest — pure logic (pricing, dates, i18n parity, admin auth)
+npm run test:e2e    # playwright — full flows against a real build + seeded MySQL
+```
+
+- **Pre-push hook** (husky) runs lint + typecheck + unit tests before every `git push`.
+- **GitHub Actions** ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs on every push to `main` and every PR: a quality job (lint, typecheck, unit, build) and an E2E job (spins up MySQL, migrates, seeds, builds, runs Playwright).
+- E2E needs the local DB up (`docker compose up -d`); it starts its own server. See [docs/TESTING.md](docs/TESTING.md).
+
 ## Layout
 
 ```
 PLAN.md                  strategy, operator research, roadmap
 docs/DEPLOY_HOSTINGER.md hosting guide (managed web-app + VPS paths)
 prisma/                  schema, migrations, seed (real timetables, transcribed 2026-07-04)
-lib/                     prisma client, i18n, server actions, operator adapters, admin auth
+lib/                     prisma client, i18n, server actions, operator adapters, admin auth, pricing
 app/                     / (compare) · /book/[sailingId] · /r/[id] (hand-off & status) · /admin
+e2e/                     Playwright specs (home, booking, find, admin)
+.github/workflows/ci.yml GitHub Actions pipeline
 Dockerfile + docker-compose.prod.yml   VPS deployment
 ```
 

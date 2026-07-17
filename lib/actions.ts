@@ -7,6 +7,7 @@ import { ReservationStatus, SailingStatus } from "@prisma/client";
 import { prisma } from "./prisma";
 import { ADMIN_COOKIE, passwordMatches, requireAdmin, sessionToken } from "./adminAuth";
 import { madridTodayKey } from "./format";
+import { clampCount, estimateCents } from "./pricing";
 import {
   sendLookupEmail,
   sendReservationConfirmedEmail,
@@ -15,22 +16,7 @@ import {
 } from "./email";
 
 function count(formData: FormData, name: string): number {
-  const n = Number(formData.get(name) ?? 0);
-  return Number.isFinite(n) && n > 0 ? Math.min(Math.floor(n), 50) : 0;
-}
-
-type FareLike = { code: string; priceCents: number };
-
-function estimateCents(
-  fares: FareLike[],
-  counts: { adult: number; child: number; infant: number },
-): number {
-  const price = (code: string) => fares.find((f) => f.code === code)?.priceCents ?? 0;
-  return (
-    counts.adult * price("adult") +
-    counts.child * price("child") +
-    counts.infant * price("infant")
-  );
+  return clampCount(formData.get(name));
 }
 
 async function findOrCreateCustomer(

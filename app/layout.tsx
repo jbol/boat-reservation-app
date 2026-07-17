@@ -43,6 +43,9 @@ export default async function RootLayout({
                 {d.navFind}
               </Link>
               <span className="text-slate-300">|</span>
+              {/* /lang/[locale] is a route handler (sets the cookie, then redirects),
+                  not a page — a full-navigation <a> is intentional here. */}
+              {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
               <a
                 href="/lang/es"
                 className={locale === "es" ? "font-bold text-sky-800" : "text-slate-500 hover:text-slate-800"}
@@ -50,6 +53,7 @@ export default async function RootLayout({
                 ES
               </a>
               <span className="text-slate-300">|</span>
+              {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
               <a
                 href="/lang/en"
                 className={locale === "en" ? "font-bold text-sky-800" : "text-slate-500 hover:text-slate-800"}

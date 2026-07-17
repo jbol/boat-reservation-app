@@ -1,0 +1,16 @@
+# Fast pre-push gate. The full suite (build + E2E) runs in CI; here we catch
+# the quick, common failures before code leaves the machine.
+#
+# Prefer the repo's Node (via nvm + .nvmrc) so checks run on Node 22 even when
+# the shell's default Node is older.
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use >/dev/null 2>&1
+
+# Fail with a clear message rather than a cryptic next/tsc error on old Node.
+node -e 'process.exit(+process.versions.node.split(".")[0] >= 20 ? 0 : 1)' || {
+  echo "✖ pre-push needs Node >= 20.9 (see .nvmrc). Current: $(node -v). Run 'nvm install' or switch your default Node."
+  exit 1
+}
+
+echo "▶ pre-push: lint · typecheck · unit tests"
+npm run lint && npm run typecheck && npm run test:unit

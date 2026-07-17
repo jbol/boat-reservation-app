@@ -7,7 +7,7 @@ export async function getLocale(): Promise<Locale> {
   return value === "en" ? "en" : "es";
 }
 
-const dictionaries = {
+export const dictionaries = {
   es: {
     appName: "Tabarca Boats",
     tagline: "Todos los barcos a la Isla de Tabarca, en un solo lugar",
