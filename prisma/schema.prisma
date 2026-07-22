@@ -89,6 +89,9 @@ model Customer {
   email        String
   phone        String?
   locale       String        @default("es")
+  // Null = guest (no account). Set when the customer signs up — signup with a
+  // guest's email claims that customer row and its reservation history.
+  passwordHash String?
   reservations Reservation[]
 
   @@index([email])

@@ -13,6 +13,7 @@ export default defineConfig({
         "lib/adapters.ts",
         "lib/i18n.ts",
         "lib/adminAuth.ts",
+        "lib/customerAuth.ts",
       ],
     },
   },

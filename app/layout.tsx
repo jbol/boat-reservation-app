@@ -5,6 +5,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import Link from "next/link";
 import { getDict } from "@/lib/i18n";
+import { getSessionCustomer } from "@/lib/customerAuth";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,6 +20,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const { locale, d } = await getDict();
+  const customer = await getSessionCustomer();
 
   return (
     <html
@@ -32,6 +34,13 @@ export default async function RootLayout({
               ⛵ {d.appName}
             </Link>
             <nav className="flex items-center gap-3 text-sm">
+              <Link
+                href="/account"
+                className={customer ? "font-semibold text-sky-800" : "text-slate-500 hover:text-slate-800"}
+              >
+                {customer ? d.myAccount : d.navSignIn}
+              </Link>
+              <span className="text-slate-300">|</span>
               <Link href="/find" className="text-slate-500 hover:text-slate-800">
                 {d.navFind}
               </Link>

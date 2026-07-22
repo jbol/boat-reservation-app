@@ -12,6 +12,7 @@ One place to see every boat heading to Isla de Tabarca (from Alicante, Santa Pol
 2. **Book** — the app records a reservation *intent*, then hands off to the operator's own checkout (they're the merchant of record). Back on the app, the customer saves their booking reference and the reservation becomes *confirmed*.
 3. **Manage** — `/admin` (password-protected) lists every reservation with filters, status updates, manual entry for phone/counter bookings, and sailing cancellation (weather happens on this crossing) that emails everyone affected.
 4. **Notify** — customers get their reservation link by email at intent and on confirmation, and `/find` re-sends links for an email address.
+5. **Accounts (optional)** — `/account` offers signup/login (scrypt + signed cookie) for prefilled booking forms and reservation history; signing up with a guest's email claims their past bookings. Guests can always book without an account.
 
 ## Stack
 

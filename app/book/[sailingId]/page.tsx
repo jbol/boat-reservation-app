@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getDict, op } from "@/lib/i18n";
+import { getSessionCustomer } from "@/lib/customerAuth";
 import { createReservation } from "@/lib/actions";
 import { euros, formatDateKey } from "@/lib/format";
 
@@ -14,6 +15,8 @@ export default async function BookPage({
   const { sailingId } = await params;
   const sp = await searchParams;
   const { locale, d } = await getDict();
+  // Optional account: prefill for logged-in customers; guests see empty fields.
+  const sessionCustomer = await getSessionCustomer();
 
   const sailing = await prisma.sailing.findUnique({
     where: { id: sailingId },
@@ -98,6 +101,7 @@ export default async function BookPage({
               type="text"
               name="name"
               required
+              defaultValue={sessionCustomer?.name ?? ""}
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-base"
             />
           </label>
@@ -107,6 +111,7 @@ export default async function BookPage({
               type="email"
               name="email"
               required
+              defaultValue={sessionCustomer?.email ?? ""}
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-base"
             />
           </label>
@@ -115,6 +120,7 @@ export default async function BookPage({
             <input
               type="tel"
               name="phone"
+              defaultValue={sessionCustomer?.phone ?? ""}
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-base"
             />
           </label>

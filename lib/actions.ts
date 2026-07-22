@@ -6,6 +6,15 @@ import { cookies } from "next/headers";
 import { ReservationStatus, SailingStatus } from "@prisma/client";
 import { prisma } from "./prisma";
 import { ADMIN_COOKIE, passwordMatches, requireAdmin, sessionToken } from "./adminAuth";
+import {
+  CUSTOMER_COOKIE,
+  MIN_PASSWORD_LENGTH,
+  getSessionCustomer,
+  hashPassword,
+  makeSessionCookieValue,
+  verifyPassword,
+} from "./customerAuth";
+import { getLocale } from "./i18n";
 import { madridTodayKey } from "./format";
 import { clampCount, estimateCents } from "./pricing";
 import {
@@ -60,7 +69,16 @@ export async function createReservation(formData: FormData) {
     redirect(`/book/${sailingId}?error=1`);
   }
 
-  const customer = await findOrCreateCustomer(name, email, phone, locale);
+  // Logged-in customers (optional accounts) attach to their own record when
+  // booking with their account email; anything else takes the guest path.
+  const sessionCustomer = await getSessionCustomer();
+  const customer =
+    sessionCustomer && sessionCustomer.email === email
+      ? await prisma.customer.update({
+          where: { id: sessionCustomer.id },
+          data: { name, phone: phone ?? sessionCustomer.phone, locale },
+        })
+      : await findOrCreateCustomer(name, email, phone, locale);
   const reservation = await prisma.reservation.create({
     data: {
       sailingId,
@@ -270,4 +288,64 @@ export async function adminSetSailingStatus(formData: FormData) {
 
   revalidatePath("/admin/sailings");
   redirect(`/admin/sailings?date=${sailing.dateKey}`);
+}
+
+// ---------------------------------------------------------------------------
+// Customer accounts — always optional; guests book without any of this
+// ---------------------------------------------------------------------------
+
+async function setCustomerCookie(customerId: string) {
+  (await cookies()).set(CUSTOMER_COOKIE, makeSessionCookieValue(customerId), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 60 * 24 * 90,
+    path: "/",
+  });
+}
+
+export async function customerSignup(formData: FormData) {
+  const name = String(formData.get("name") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+
+  if (!name || !email.includes("@")) redirect("/account?error=signup");
+  if (password.length < MIN_PASSWORD_LENGTH) redirect("/account?error=password");
+
+  const existing = await prisma.customer.findFirst({ where: { email } });
+  if (existing?.passwordHash) redirect("/account?error=exists");
+
+  // Signing up with a guest's email claims that customer row, so their past
+  // reservations appear in the new account.
+  const customer = existing
+    ? await prisma.customer.update({
+        where: { id: existing.id },
+        data: { name, passwordHash: hashPassword(password) },
+      })
+    : await prisma.customer.create({
+        data: { name, email, locale: await getLocale(), passwordHash: hashPassword(password) },
+      });
+
+  await setCustomerCookie(customer.id);
+  redirect("/account");
+}
+
+export async function customerLogin(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+
+  const customer = email.includes("@")
+    ? await prisma.customer.findFirst({ where: { email } })
+    : null;
+  if (!customer?.passwordHash || !verifyPassword(password, customer.passwordHash)) {
+    redirect("/account?error=login");
+  }
+
+  await setCustomerCookie(customer.id);
+  redirect("/account");
+}
+
+export async function customerLogout() {
+  (await cookies()).delete(CUSTOMER_COOKIE);
+  redirect("/");
 }
