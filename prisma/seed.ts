@@ -1,7 +1,11 @@
 /**
- * Seed data transcribed from the operators' public websites on 2026-07-04.
+ * Seed data transcribed from the operators' public websites on 2026-07-04
+ * (Kontiki, Transtabarca, Tabarkeras) and 2026-07-21 (Marítimas Torrevieja).
  * Summer 2026 timetables — operators warn that times can change without
  * notice, so verify against their sites before relying on this in production.
+ * Checked and NOT seeded (no 2026 service): Benidorm & El Campello (EMB
+ * suspended the route), Calpe/Altea/Villajoyosa/Dénia (no operator),
+ * Guardamar (private charters only). See PLAN.md §2.
  * Re-runnable: upserts + createMany(skipDuplicates), never deletes.
  */
 import { PrismaClient } from "@prisma/client";
@@ -28,6 +32,7 @@ async function main() {
   const ports = [
     { id: "port-alicante", slug: "alicante", nameEs: "Alicante", nameEn: "Alicante" },
     { id: "port-santa-pola", slug: "santa-pola", nameEs: "Santa Pola", nameEn: "Santa Pola" },
+    { id: "port-torrevieja", slug: "torrevieja", nameEs: "Torrevieja", nameEn: "Torrevieja" },
     { id: "port-tabarca", slug: "tabarca", nameEs: "Isla de Tabarca", nameEn: "Tabarca Island" },
   ];
   for (const p of ports) {
@@ -210,6 +215,92 @@ async function main() {
     update: tabarkeras,
     create: tabarkeras,
   });
+
+  // ---- Marítimas Torrevieja (Torrevieja) — verified 2026-07-21 -------------
+  // Day trip with FIXED returns (openReturn: false), unlike the other routes.
+  const maritimas = {
+    id: "op-maritimas-torrevieja",
+    slug: "maritimas-torrevieja",
+    name: "Marítimas Torrevieja",
+    homeUrl: "https://maritimastorrevieja.es/",
+    bookingUrl: "https://maritimastorrevieja.es/tickets/",
+    blurbEs:
+      "Catamarán con visión submarina desde el puerto de Torrevieja, navegando desde 1989. Excursión de un día: ~1 h de travesía y 5–6 h en la isla. Mascotas gratis y acceso para movilidad reducida.",
+    blurbEn:
+      "Underwater-vision catamaran from Torrevieja port, sailing since 1989. Day trip: ~1 h crossing and 5–6 h on the island. Pets travel free; reduced-mobility access.",
+    tier: "deeplink",
+    scheduleVerified: true,
+    scheduleCheckedAt: new Date("2026-07-21"),
+  };
+  await prisma.operator.upsert({ where: { id: maritimas.id }, update: maritimas, create: maritimas });
+
+  const maritimasRoute = {
+    id: "route-maritimas-torrevieja",
+    operatorId: maritimas.id,
+    originPortId: "port-torrevieja",
+    durationMin: 60,
+    durationNoteEs: "aprox.",
+    durationNoteEn: "approx.",
+    openReturn: false,
+    returnNoteEs:
+      "Excursión de un día con vuelta fija: julio y septiembre, vuelta desde Tabarca a las 18:30 · agosto (lun–sáb): salida 09:30 → vuelta 17:30 y salida 12:15 → vuelta 20:15 · domingos de agosto: 10:45 → 19:00.",
+    returnNoteEn:
+      "Day trip with a fixed return: July & September, return from Tabarca at 18:30 · August (Mon–Sat): 09:30 departure → 17:30 return and 12:15 departure → 20:15 return · August Sundays: 10:45 → 19:00.",
+  };
+  await prisma.route.upsert({
+    where: { id: maritimasRoute.id },
+    update: maritimasRoute,
+    create: maritimasRoute,
+  });
+
+  const maritimasFares = [
+    {
+      id: "fare-maritimas-adult",
+      routeId: maritimasRoute.id,
+      code: "adult",
+      labelEs: "Adulto (ida y vuelta)",
+      labelEn: "Adult (round trip)",
+      priceCents: 2900,
+      noteEs: "Reducida 27 € para estudiantes y personas con discapacidad",
+      noteEn: "Reduced €27 for students and disabled visitors",
+    },
+    {
+      id: "fare-maritimas-child",
+      routeId: maritimasRoute.id,
+      code: "child",
+      labelEs: "Niños 3–10 años",
+      labelEn: "Children 3–10",
+      priceCents: 1900,
+    },
+    {
+      id: "fare-maritimas-infant",
+      routeId: maritimasRoute.id,
+      code: "infant",
+      labelEs: "Menores de 3 años",
+      labelEn: "Under 3",
+      priceCents: 0,
+      noteEs: "Gratis",
+      noteEn: "Free",
+    },
+  ];
+  for (const f of maritimasFares) {
+    await prisma.fareType.upsert({ where: { id: f.id }, update: f, create: f });
+  }
+
+  // July & September: daily 10:45 · August: Mon–Sat 09:30 + 12:15, Sun 10:45
+  const maritimasSailings: { routeId: string; dateKey: string; departureTime: string }[] = [];
+  for (const { dateKey, dayOfWeek } of eachDay(SEASON_START, SEASON_END)) {
+    const august = dateKey.slice(5, 7) === "08";
+    const times = august
+      ? dayOfWeek === 0
+        ? ["10:45"]
+        : ["09:30", "12:15"]
+      : ["10:45"];
+    for (const departureTime of times) {
+      maritimasSailings.push({ routeId: maritimasRoute.id, dateKey, departureTime });
+    }
+  }
+  await prisma.sailing.createMany({ data: maritimasSailings, skipDuplicates: true });
 
   const counts = {
     operators: await prisma.operator.count(),

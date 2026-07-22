@@ -24,3 +24,14 @@ test("language toggle switches ES/EN", async ({ page }) => {
   await page.getByRole("link", { name: "ES" }).click();
   await expect(page.getByRole("heading", { name: /Todos los barcos a la Isla de Tabarca/i })).toBeVisible();
 });
+
+test("port filter narrows the list to one origin", async ({ page }) => {
+  await page.goto(`/?date=${SEED_DATE}`);
+  await page.getByLabel("From").selectOption("torrevieja");
+  await page.getByRole("button", { name: "Show boats" }).click();
+
+  await expect(page.getByText("Marítimas Torrevieja").first()).toBeVisible();
+  await expect(page.getByText("Cruceros Kontiki")).toHaveCount(0);
+  // Torrevieja is a fixed-return day trip, not an open return.
+  await expect(page.getByText("Day trip (fixed return)").first()).toBeVisible();
+});

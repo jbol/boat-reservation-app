@@ -1,6 +1,6 @@
 # Tabarca Boat Reservation App
 
-One place to see every boat heading to Isla de Tabarca (from Alicante and Santa Pola), compare schedules and prices, and book — with bookings fulfilled through the operators' **existing** systems (Kontiki, Transtabarca, Tabarkeras, …), plus an admin dashboard to manage the reservations made through the app.
+One place to see every boat heading to Isla de Tabarca (from Alicante, Santa Pola and Torrevieja), compare schedules and prices, and book — with bookings fulfilled through the operators' **existing** systems (Kontiki, Transtabarca, Marítimas Torrevieja, Tabarkeras, …), plus an admin dashboard to manage the reservations made through the app.
 
 ## Status
 

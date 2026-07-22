@@ -21,12 +21,15 @@ The key constraint discovered in research: **none of the direct operators publis
 | Transtabarca | Santa Pola | [islatabarca.com](https://www.islatabarca.com/) | TBD (verify) | Deep link |
 | Viajes Isla Tabarca | Santa Pola | [viajesislatabarca.com](https://viajesislatabarca.com/) | TBD (verify) | Deep link |
 | Tabarca Experience | Santa Pola | [tabarcaexperience.com](https://tabarcaexperience.com/) | TBD — already bundles ferry + restaurant + excursions in one checkout | Deep link; possible partner/inspiration |
+| Marítimas Torrevieja | Torrevieja | [maritimastorrevieja.es](https://maritimastorrevieja.es/) | Custom tickets page (date-picker widget) | Deep link (seeded, verified 2026-07-21); day trip with fixed returns |
 
 Reference facts gathered:
 
 - **Kontiki (Alicante):** ~€24 round trip, kids 0–4 free, open-return tickets, 3 catamarans (2 with underwater vision), operating since 1966. Online flow: pick date/time → pay → download tickets. Also sells boat+meal packages, snorkel tours (partner: Tabarca Snorkel), group trips.
 - **Tabarkeras (Santa Pola):** ~22–25 min crossing, up to 16 daily departures 9:00–19:00 outbound / 12 return departures in season, two 250-pax catamarans.
 - **Santa Pola ↔ Tabarca** in general: ~3 nautical miles, 20–30 min, departures every ~30 min in high season, €9–25 round trip depending on operator/season.
+- **Marítimas Torrevieja (verified 2026-07-21):** classic day trip since 1989 — July & September daily 10:45 out / 18:30 back; August Mon–Sat two rotations (09:30→17:30, 12:15→20:15) and Sundays 10:45→19:00; €29 adult / €19 child 3–10 / under-3 free (€27 reduced); ~1 h crossing on a glass-bottom catamaran.
+- **Ports checked with NO scheduled 2026 service (researched 2026-07-21, re-check for 2027):** Benidorm and El Campello — Excursiones Marítimas Benidorm suspended its Tabarca route ("no disponible temporalmente"; their ticket engine sells no Tabarca product, and "from Benidorm" products on GetYourGuide are coach transfers to the Santa Pola boat). Calpe, Altea, Villajoyosa, Dénia — no operator (Mundo Marino doesn't serve Tabarca). Guardamar — private charters/jet-ski only.
 - **Aggregators already sell these trips:** [Civitatis](https://www.civitatis.com/en/alicante/tabarca-island-ferry/) lists the Alicante–Tabarca ferry (Civitatis has an affiliate program), and GetYourGuide/Viator-style platforms have partner APIs. This is the most realistic path to *structured, commissionable* availability without a direct operator deal.
 
 ## 3. Integration strategy (tiered)

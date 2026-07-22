@@ -44,7 +44,9 @@ model Route {
   durationMin    Int
   durationNoteEs String?
   durationNoteEn String?
-  // Both current operators sell open returns — return boats are informational, not booked.
+  // True = open return (take any boat back); false = day trip with fixed
+  // return times (e.g. Torrevieja). Details live in the return notes.
+  openReturn     Boolean    @default(true)
   returnNoteEs   String?    @db.Text
   returnNoteEn   String?    @db.Text
   fares          FareType[]

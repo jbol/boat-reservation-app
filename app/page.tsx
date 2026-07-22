@@ -14,9 +14,20 @@ export default async function Home({
   const today = madridTodayKey();
   const dateKey = isDateKey(sp.date) ? sp.date : today;
 
+  const ports = await prisma.port.findMany({
+    where: { routesFrom: { some: {} } },
+    orderBy: { slug: "asc" },
+  });
+  const from =
+    typeof sp.from === "string" && ports.some((p) => p.slug === sp.from) ? sp.from : "";
+
   const [sailings, unverifiedOperators] = await Promise.all([
     prisma.sailing.findMany({
-      where: { dateKey, status: "SCHEDULED" },
+      where: {
+        dateKey,
+        status: "SCHEDULED",
+        ...(from ? { route: { originPort: { slug: from } } } : {}),
+      },
       include: {
         route: { include: { operator: true, originPort: true, fares: true } },
       },
@@ -24,6 +35,8 @@ export default async function Home({
     }),
     prisma.operator.findMany({ where: { scheduleVerified: false } }),
   ]);
+
+  const dateHref = (key: string) => `/?date=${key}${from ? `&from=${from}` : ""}`;
 
   return (
     <div className="space-y-8">
@@ -43,6 +56,21 @@ export default async function Home({
               className="rounded-lg border border-slate-300 px-3 py-2 text-base"
             />
           </label>
+          <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+            {d.fromLabel}
+            <select
+              name="from"
+              defaultValue={from}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-base"
+            >
+              <option value="">{d.allPorts}</option>
+              {ports.map((p) => (
+                <option key={p.slug} value={p.slug}>
+                  {locale === "es" ? p.nameEs : p.nameEn}
+                </option>
+              ))}
+            </select>
+          </label>
           <button
             type="submit"
             className="rounded-lg bg-sky-700 px-4 py-2 font-semibold text-white hover:bg-sky-800"
@@ -51,20 +79,20 @@ export default async function Home({
           </button>
           <nav className="ml-auto flex items-center gap-2 text-sm">
             <Link
-              href={`/?date=${shiftDateKey(dateKey, -1)}`}
+              href={dateHref(shiftDateKey(dateKey, -1))}
               className="rounded-lg border border-slate-300 px-3 py-2 hover:bg-slate-100"
               aria-label="Previous day"
             >
               ‹
             </Link>
             <Link
-              href={`/?date=${today}`}
+              href={dateHref(today)}
               className="rounded-lg border border-slate-300 px-3 py-2 hover:bg-slate-100"
             >
               {d.today}
             </Link>
             <Link
-              href={`/?date=${shiftDateKey(dateKey, 1)}`}
+              href={dateHref(shiftDateKey(dateKey, 1))}
               className="rounded-lg border border-slate-300 px-3 py-2 hover:bg-slate-100"
               aria-label="Next day"
             >
@@ -103,7 +131,8 @@ export default async function Home({
                     <p className="font-semibold text-slate-900">{route.operator.name}</p>
                     <p className="text-sm text-slate-600">
                       {d.fromPort} {portName} · {d.approxDuration} {route.durationMin} min
-                      {durationNote ? ` (${durationNote})` : ""} · {d.openReturn}
+                      {durationNote ? ` (${durationNote})` : ""} ·{" "}
+                      {route.openReturn ? d.openReturn : d.dayTrip}
                     </p>
                   </div>
                   <div className="flex items-center gap-4">
