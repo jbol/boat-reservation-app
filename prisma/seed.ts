@@ -302,6 +302,87 @@ async function main() {
   }
   await prisma.sailing.createMany({ data: maritimasSailings, skipDuplicates: true });
 
+  // ---- Return crossings FROM Tabarca (informational — not bookable) --------
+  // Powers the "Desde: Isla de Tabarca" view for people on the island. Return
+  // legs are covered by the round-trip tickets, so these routes carry no
+  // fares and the UI renders no Book button. Times from the same verified
+  // sources as the outbound schedules.
+  const returnRoutes = [
+    {
+      id: "route-kontiki-return",
+      operatorId: kontiki.id,
+      originPortId: "port-tabarca",
+      destinationEs: "Alicante",
+      destinationEn: "Alicante",
+      durationMin: 60,
+      durationNoteEs: "aprox.",
+      durationNoteEn: "approx.",
+      openReturn: true,
+      returnNoteEs:
+        "Vuelta incluida en el billete de ida y vuelta de Kontiki — súbete a cualquiera de sus barcos.",
+      returnNoteEn: "Return included in Kontiki's round-trip ticket — take any of their boats.",
+    },
+    {
+      id: "route-transtabarca-return",
+      operatorId: transtabarca.id,
+      originPortId: "port-tabarca",
+      destinationEs: "Santa Pola",
+      destinationEn: "Santa Pola",
+      durationMin: 25,
+      durationNoteEs: "15 min barco rápido · 25 min catamarán",
+      durationNoteEn: "15 min fast boat · 25 min catamaran",
+      openReturn: true,
+      returnNoteEs:
+        "Ticket abierto de Transtabarca — vuelve en cualquiera de sus barcos.",
+      returnNoteEn: "Transtabarca open ticket — take any of their boats back.",
+    },
+    {
+      id: "route-maritimas-return",
+      operatorId: maritimas.id,
+      originPortId: "port-tabarca",
+      destinationEs: "Torrevieja",
+      destinationEn: "Torrevieja",
+      durationMin: 60,
+      durationNoteEs: "aprox.",
+      durationNoteEn: "approx.",
+      openReturn: false,
+      returnNoteEs:
+        "Vuelta fija de la excursión de día de Marítimas Torrevieja.",
+      returnNoteEn: "Fixed return of the Marítimas Torrevieja day trip.",
+    },
+  ];
+  for (const r of returnRoutes) {
+    await prisma.route.upsert({ where: { id: r.id }, update: r, create: r });
+  }
+
+  const returnSailings: { routeId: string; dateKey: string; departureTime: string }[] = [];
+  for (const { dateKey, dayOfWeek } of eachDay(SEASON_START, SEASON_END)) {
+    // Kontiki → Alicante: Mon–Thu & Sun 16:00/17:30/18:15 · Fri & Sat 16:00/18:15
+    const kontikiTimes =
+      dayOfWeek === 5 || dayOfWeek === 6 ? ["16:00", "18:15"] : ["16:00", "17:30", "18:15"];
+    for (const departureTime of kontikiTimes) {
+      returnSailings.push({ routeId: "route-kontiki-return", dateKey, departureTime });
+    }
+    // Transtabarca → Santa Pola: daily
+    for (const departureTime of [
+      "10:30", "11:15", "12:10", "12:45", "13:45", "14:50",
+      "16:15", "17:10", "18:10", "19:30", "20:30",
+    ]) {
+      returnSailings.push({ routeId: "route-transtabarca-return", dateKey, departureTime });
+    }
+    // Marítimas Torrevieja → Torrevieja: Jul/Sep 18:30 · Aug Mon–Sat 17:30 + 20:15, Sun 19:00
+    const august = dateKey.slice(5, 7) === "08";
+    const maritimasTimes = august
+      ? dayOfWeek === 0
+        ? ["19:00"]
+        : ["17:30", "20:15"]
+      : ["18:30"];
+    for (const departureTime of maritimasTimes) {
+      returnSailings.push({ routeId: "route-maritimas-return", dateKey, departureTime });
+    }
+  }
+  await prisma.sailing.createMany({ data: returnSailings, skipDuplicates: true });
+
   const counts = {
     operators: await prisma.operator.count(),
     routes: await prisma.route.count(),

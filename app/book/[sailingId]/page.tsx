@@ -24,7 +24,9 @@ export default async function BookPage({
       route: { include: { operator: true, originPort: true, fares: true } },
     },
   });
-  if (!sailing || sailing.status !== "SCHEDULED") notFound();
+  // Return crossings from Tabarca are informational — not bookable.
+  if (!sailing || sailing.status !== "SCHEDULED" || sailing.route.originPort.slug === "tabarca")
+    notFound();
 
   const route = sailing.route;
   const portName = locale === "es" ? route.originPort.nameEs : route.originPort.nameEn;

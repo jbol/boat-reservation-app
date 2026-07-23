@@ -15,7 +15,12 @@ export default async function AdminNewPage({
 
   const date = isDateKey(sp.date) ? sp.date : madridTodayKey();
   const sailings = await prisma.sailing.findMany({
-    where: { dateKey: date, status: "SCHEDULED" },
+    where: {
+      dateKey: date,
+      status: "SCHEDULED",
+      // Outbound only — return crossings from Tabarca take no reservations.
+      route: { originPort: { slug: { not: "tabarca" } } },
+    },
     include: { route: { include: { operator: true, originPort: true } } },
     orderBy: { departureTime: "asc" },
   });

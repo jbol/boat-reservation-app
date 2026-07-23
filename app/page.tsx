@@ -26,7 +26,9 @@ export default async function Home({
       where: {
         dateKey,
         status: "SCHEDULED",
-        ...(from ? { route: { originPort: { slug: from } } } : {}),
+        // Default view = boats TO Tabarca; picking "Isla de Tabarca" in the
+        // From selector switches to the return crossings instead.
+        route: { originPort: { slug: from || { not: "tabarca" } } },
       },
       include: {
         route: { include: { operator: true, originPort: true, fares: true } },
@@ -115,8 +117,10 @@ export default async function Home({
           <ul className="space-y-3">
             {sailings.map((s) => {
               const route = s.route;
+              const isReturn = route.originPort.slug === "tabarca";
               const adultFare = route.fares.find((f) => f.code === "adult");
               const portName = locale === "es" ? route.originPort.nameEs : route.originPort.nameEn;
+              const destination = locale === "es" ? route.destinationEs : route.destinationEn;
               const durationNote =
                 locale === "es" ? route.durationNoteEs : route.durationNoteEn;
               return (
@@ -130,27 +134,40 @@ export default async function Home({
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-slate-900">{route.operator.name}</p>
                     <p className="text-sm text-slate-600">
-                      {d.fromPort} {portName} · {d.approxDuration} {route.durationMin} min
+                      {isReturn ? (
+                        <>→ {destination}</>
+                      ) : (
+                        <>
+                          {d.fromPort} {portName}
+                        </>
+                      )}{" "}
+                      · {d.approxDuration} {route.durationMin} min
                       {durationNote ? ` (${durationNote})` : ""} ·{" "}
                       {route.openReturn ? d.openReturn : d.dayTrip}
                     </p>
                   </div>
-                  <div className="flex items-center gap-4">
-                    {adultFare && (
-                      <div className="text-right">
-                        <p className="text-xl font-bold text-slate-900">
-                          {euros(adultFare.priceCents, locale)}
-                        </p>
-                        <p className="text-xs text-slate-500">{d.perAdult}</p>
-                      </div>
-                    )}
-                    <Link
-                      href={`/book/${s.id}`}
-                      className="rounded-lg bg-sky-700 px-4 py-2 font-semibold text-white hover:bg-sky-800"
-                    >
-                      {d.book}
-                    </Link>
-                  </div>
+                  {isReturn ? (
+                    <p className="max-w-[180px] text-right text-xs text-slate-500">
+                      {d.returnIncluded}
+                    </p>
+                  ) : (
+                    <div className="flex items-center gap-4">
+                      {adultFare && (
+                        <div className="text-right">
+                          <p className="text-xl font-bold text-slate-900">
+                            {euros(adultFare.priceCents, locale)}
+                          </p>
+                          <p className="text-xs text-slate-500">{d.perAdult}</p>
+                        </div>
+                      )}
+                      <Link
+                        href={`/book/${s.id}`}
+                        className="rounded-lg bg-sky-700 px-4 py-2 font-semibold text-white hover:bg-sky-800"
+                      >
+                        {d.book}
+                      </Link>
+                    </div>
+                  )}
                 </li>
               );
             })}

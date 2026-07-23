@@ -62,9 +62,12 @@ export async function createReservation(formData: FormData) {
 
   const sailing = await prisma.sailing.findUnique({
     where: { id: sailingId },
-    include: { route: { include: { fares: true } } },
+    include: { route: { include: { fares: true, originPort: true } } },
   });
-  if (!sailing || sailing.status !== "SCHEDULED") redirect("/");
+  // Return crossings from Tabarca are informational — not bookable.
+  if (!sailing || sailing.status !== "SCHEDULED" || sailing.route.originPort.slug === "tabarca") {
+    redirect("/");
+  }
   if (!name || !email || counts.adult + counts.child + counts.infant === 0) {
     redirect(`/book/${sailingId}?error=1`);
   }
