@@ -51,6 +51,27 @@ model Route {
   returnNoteEn   String?    @db.Text
   fares          FareType[]
   sailings       Sailing[]
+  timetables     Timetable[]
+}
+
+// A recurring departure pattern for a route — the editable source of truth
+// that sailings are materialized from (see lib/timetables.ts). Multiple rows
+// per route cover seasonal variations (e.g. August-only extra departures).
+model Timetable {
+  id        String   @id
+  routeId   String
+  route     Route    @relation(fields: [routeId], references: [id])
+  validFrom String   @db.VarChar(10) // dateKey, inclusive
+  validTo   String   @db.VarChar(10) // dateKey, inclusive
+  // 7 chars, Sunday-first (index = JS getUTCDay): "1" = runs that weekday.
+  daysMask  String   @db.VarChar(7)
+  times     Json // ["HH:MM", ...]
+  noteEs    String?
+  noteEn    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([routeId])
 }
 
 model FareType {

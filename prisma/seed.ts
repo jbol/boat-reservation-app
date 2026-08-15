@@ -9,23 +9,12 @@
  * Re-runnable: upserts + createMany(skipDuplicates), never deletes.
  */
 import { PrismaClient } from "@prisma/client";
+import { applyTimetables } from "../lib/timetables";
 
 const prisma = new PrismaClient();
 
 const SEASON_START = "2026-07-04";
 const SEASON_END = "2026-09-30";
-
-function* eachDay(fromKey: string, toKey: string) {
-  const d = new Date(`${fromKey}T12:00:00Z`);
-  const end = new Date(`${toKey}T12:00:00Z`);
-  while (d <= end) {
-    yield {
-      dateKey: d.toISOString().slice(0, 10),
-      dayOfWeek: d.getUTCDay(), // 0 = Sunday … 6 = Saturday
-    };
-    d.setUTCDate(d.getUTCDate() + 1);
-  }
-}
 
 async function main() {
   // ---- Ports -------------------------------------------------------------
@@ -98,18 +87,7 @@ async function main() {
     await prisma.fareType.upsert({ where: { id: f.id }, update: f, create: f });
   }
 
-  // Mon–Thu, Sat, Sun: 09:45 10:45 12:00 13:15 · Friday: 09:45 10:45 12:15
-  const kontikiSailings: { routeId: string; dateKey: string; departureTime: string }[] = [];
-  for (const { dateKey, dayOfWeek } of eachDay(SEASON_START, SEASON_END)) {
-    const times =
-      dayOfWeek === 5
-        ? ["09:45", "10:45", "12:15"]
-        : ["09:45", "10:45", "12:00", "13:15"];
-    for (const departureTime of times) {
-      kontikiSailings.push({ routeId: kontikiRoute.id, dateKey, departureTime });
-    }
-  }
-  await prisma.sailing.createMany({ data: kontikiSailings, skipDuplicates: true });
+  // Sailings for all routes are materialized from Timetable rows at the end.
 
   // ---- Transtabarca (Santa Pola) -------------------------------------------
   const transtabarca = {
@@ -182,19 +160,6 @@ async function main() {
     await prisma.fareType.upsert({ where: { id: f.id }, update: f, create: f });
   }
 
-  // Daily 10:00–19:30 · Sat & Sun also 09:30
-  const transBase = [
-    "10:00", "10:45", "11:30", "12:00", "12:30", "13:00",
-    "14:00", "15:30", "16:30", "17:30", "18:30", "19:30",
-  ];
-  const transSailings: { routeId: string; dateKey: string; departureTime: string }[] = [];
-  for (const { dateKey, dayOfWeek } of eachDay(SEASON_START, SEASON_END)) {
-    const times = dayOfWeek === 0 || dayOfWeek === 6 ? ["09:30", ...transBase] : transBase;
-    for (const departureTime of times) {
-      transSailings.push({ routeId: transRoute.id, dateKey, departureTime });
-    }
-  }
-  await prisma.sailing.createMany({ data: transSailings, skipDuplicates: true });
 
   // ---- Tabarkeras (Santa Pola) — known operator, timetable not yet verified --
   const tabarkeras = {
@@ -287,20 +252,6 @@ async function main() {
     await prisma.fareType.upsert({ where: { id: f.id }, update: f, create: f });
   }
 
-  // July & September: daily 10:45 · August: Mon–Sat 09:30 + 12:15, Sun 10:45
-  const maritimasSailings: { routeId: string; dateKey: string; departureTime: string }[] = [];
-  for (const { dateKey, dayOfWeek } of eachDay(SEASON_START, SEASON_END)) {
-    const august = dateKey.slice(5, 7) === "08";
-    const times = august
-      ? dayOfWeek === 0
-        ? ["10:45"]
-        : ["09:30", "12:15"]
-      : ["10:45"];
-    for (const departureTime of times) {
-      maritimasSailings.push({ routeId: maritimasRoute.id, dateKey, departureTime });
-    }
-  }
-  await prisma.sailing.createMany({ data: maritimasSailings, skipDuplicates: true });
 
   // ---- Return crossings FROM Tabarca (informational — not bookable) --------
   // Powers the "Desde: Isla de Tabarca" view for people on the island. Return
@@ -355,33 +306,43 @@ async function main() {
     await prisma.route.upsert({ where: { id: r.id }, update: r, create: r });
   }
 
-  const returnSailings: { routeId: string; dateKey: string; departureTime: string }[] = [];
-  for (const { dateKey, dayOfWeek } of eachDay(SEASON_START, SEASON_END)) {
-    // Kontiki → Alicante: Mon–Thu & Sun 16:00/17:30/18:15 · Fri & Sat 16:00/18:15
-    const kontikiTimes =
-      dayOfWeek === 5 || dayOfWeek === 6 ? ["16:00", "18:15"] : ["16:00", "17:30", "18:15"];
-    for (const departureTime of kontikiTimes) {
-      returnSailings.push({ routeId: "route-kontiki-return", dateKey, departureTime });
-    }
-    // Transtabarca → Santa Pola: daily
-    for (const departureTime of [
-      "10:30", "11:15", "12:10", "12:45", "13:45", "14:50",
-      "16:15", "17:10", "18:10", "19:30", "20:30",
-    ]) {
-      returnSailings.push({ routeId: "route-transtabarca-return", dateKey, departureTime });
-    }
-    // Marítimas Torrevieja → Torrevieja: Jul/Sep 18:30 · Aug Mon–Sat 17:30 + 20:15, Sun 19:00
-    const august = dateKey.slice(5, 7) === "08";
-    const maritimasTimes = august
-      ? dayOfWeek === 0
-        ? ["19:00"]
-        : ["17:30", "20:15"]
-      : ["18:30"];
-    for (const departureTime of maritimasTimes) {
-      returnSailings.push({ routeId: "route-maritimas-return", dateKey, departureTime });
-    }
+  // ---- Timetables: the editable source of truth (masks are Sunday-first) ---
+  const AUG_FROM = "2026-08-01";
+  const AUG_TO = "2026-08-31";
+  const timetables = [
+    // Kontiki outbound: Mon–Thu, Sat, Sun 4 sailings · Fri 3
+    { id: "tt-kontiki-main", routeId: "route-kontiki-alicante", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1111101", times: ["09:45", "10:45", "12:00", "13:15"] },
+    { id: "tt-kontiki-fri", routeId: "route-kontiki-alicante", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "0000010", times: ["09:45", "10:45", "12:15"] },
+    // Transtabarca outbound: daily base + weekend 09:30 extra
+    { id: "tt-trans-base", routeId: "route-transtabarca-santa-pola", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1111111", times: ["10:00", "10:45", "11:30", "12:00", "12:30", "13:00", "14:00", "15:30", "16:30", "17:30", "18:30", "19:30"] },
+    { id: "tt-trans-weekend", routeId: "route-transtabarca-santa-pola", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1000001", times: ["09:30"] },
+    // Marítimas Torrevieja outbound: Jul & Sep daily 10:45 · Aug Mon–Sat 2 rotations, Sun 10:45
+    { id: "tt-mt-jul", routeId: "route-maritimas-torrevieja", validFrom: SEASON_START, validTo: "2026-07-31", daysMask: "1111111", times: ["10:45"] },
+    { id: "tt-mt-sep", routeId: "route-maritimas-torrevieja", validFrom: "2026-09-01", validTo: SEASON_END, daysMask: "1111111", times: ["10:45"] },
+    { id: "tt-mt-aug-mosat", routeId: "route-maritimas-torrevieja", validFrom: AUG_FROM, validTo: AUG_TO, daysMask: "0111111", times: ["09:30", "12:15"] },
+    { id: "tt-mt-aug-sun", routeId: "route-maritimas-torrevieja", validFrom: AUG_FROM, validTo: AUG_TO, daysMask: "1000000", times: ["10:45"] },
+    // Returns from Tabarca
+    { id: "tt-kontiki-ret-main", routeId: "route-kontiki-return", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1111100", times: ["16:00", "17:30", "18:15"] },
+    { id: "tt-kontiki-ret-frisat", routeId: "route-kontiki-return", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "0000011", times: ["16:00", "18:15"] },
+    { id: "tt-trans-ret", routeId: "route-transtabarca-return", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1111111", times: ["10:30", "11:15", "12:10", "12:45", "13:45", "14:50", "16:15", "17:10", "18:10", "19:30", "20:30"] },
+    { id: "tt-mt-ret-jul", routeId: "route-maritimas-return", validFrom: SEASON_START, validTo: "2026-07-31", daysMask: "1111111", times: ["18:30"] },
+    { id: "tt-mt-ret-sep", routeId: "route-maritimas-return", validFrom: "2026-09-01", validTo: SEASON_END, daysMask: "1111111", times: ["18:30"] },
+    { id: "tt-mt-ret-aug-mosat", routeId: "route-maritimas-return", validFrom: AUG_FROM, validTo: AUG_TO, daysMask: "0111111", times: ["17:30", "20:15"] },
+    { id: "tt-mt-ret-aug-sun", routeId: "route-maritimas-return", validFrom: AUG_FROM, validTo: AUG_TO, daysMask: "1000000", times: ["19:00"] },
+  ];
+  for (const t of timetables) {
+    await prisma.timetable.upsert({ where: { id: t.id }, update: t, create: t });
   }
-  await prisma.sailing.createMany({ data: returnSailings, skipDuplicates: true });
+
+  // Materialize sailings from timetables via the same engine the admin uses.
+  // On an already-seeded database every route should report created:0.
+  const routeIds = [...new Set(timetables.map((t) => t.routeId))];
+  for (const routeId of routeIds) {
+    const result = await applyTimetables(prisma, routeId, SEASON_START, SEASON_END);
+    console.log(
+      `apply ${routeId}: +${result.created} kept ${result.kept} cancelled ${result.cancelled} deleted ${result.deleted}`,
+    );
+  }
 
   const counts = {
     operators: await prisma.operator.count(),

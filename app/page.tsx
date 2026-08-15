@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getDict } from "@/lib/i18n";
-import { euros, formatDateKey, isDateKey, madridTodayKey, shiftDateKey } from "@/lib/format";
+import {
+  euros,
+  formatDateKey,
+  isDateKey,
+  isScheduleStale,
+  madridTodayKey,
+  shiftDateKey,
+} from "@/lib/format";
 
 export default async function Home({
   searchParams,
@@ -21,7 +28,7 @@ export default async function Home({
   const from =
     typeof sp.from === "string" && ports.some((p) => p.slug === sp.from) ? sp.from : "";
 
-  const [sailings, unverifiedOperators] = await Promise.all([
+  const [sailings, unverifiedOperators, verifiedAgg] = await Promise.all([
     prisma.sailing.findMany({
       where: {
         dateKey,
@@ -36,9 +43,15 @@ export default async function Home({
       orderBy: { departureTime: "asc" },
     }),
     prisma.operator.findMany({ where: { scheduleVerified: false } }),
+    prisma.operator.aggregate({
+      where: { scheduleVerified: true },
+      _min: { scheduleCheckedAt: true },
+    }),
   ]);
 
   const dateHref = (key: string) => `/?date=${key}${from ? `&from=${from}` : ""}`;
+  const oldestCheck = verifiedAgg._min.scheduleCheckedAt;
+  const checksAreStale = isScheduleStale(oldestCheck);
 
   return (
     <div className="space-y-8">
@@ -105,9 +118,19 @@ export default async function Home({
       </section>
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold text-slate-800">
+        <h2 className="mb-1 text-lg font-semibold text-slate-800">
           {d.sailingsFor} {formatDateKey(dateKey, locale)}
         </h2>
+        {oldestCheck && (
+          <p className={`mb-3 text-xs ${checksAreStale ? "text-amber-700" : "text-slate-500"}`}>
+            {d.verifiedOn}{" "}
+            {oldestCheck.toLocaleDateString(locale === "es" ? "es-ES" : "en-GB", {
+              day: "numeric",
+              month: "long",
+            })}
+            {checksAreStale ? ` — ${d.staleWarning}` : ""}
+          </p>
+        )}
 
         {sailings.length === 0 ? (
           <p className="rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
@@ -132,7 +155,15 @@ export default async function Home({
                     {s.departureTime}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-slate-900">{route.operator.name}</p>
+                    <p className="font-semibold text-slate-900">
+                      <Link
+                        href={`/horarios/${route.operator.slug}`}
+                        className="hover:text-sky-800 hover:underline"
+                        title={d.seeSchedule}
+                      >
+                        {route.operator.name}
+                      </Link>
+                    </p>
                     <p className="text-sm text-slate-600">
                       {isReturn ? (
                         <>→ {destination}</>

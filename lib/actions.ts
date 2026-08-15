@@ -15,7 +15,9 @@ import {
   verifyPassword,
 } from "./customerAuth";
 import { getLocale } from "./i18n";
-import { madridTodayKey } from "./format";
+import { madridTodayKey, isDateKey } from "./format";
+import { applyTimetables, isValidTime } from "./timetables";
+import { randomUUID } from "node:crypto";
 import { clampCount, estimateCents } from "./pricing";
 import {
   sendLookupEmail,
@@ -351,4 +353,91 @@ export async function customerLogin(formData: FormData) {
 export async function customerLogout() {
   (await cookies()).delete(CUSTOMER_COOKIE);
   redirect("/");
+}
+
+// ---------------------------------------------------------------------------
+// Admin: timetable management (Layer B — schedules as data, not code)
+// ---------------------------------------------------------------------------
+
+export async function adminSaveTimetable(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "").trim() || `tt-${randomUUID()}`;
+  const routeId = String(formData.get("routeId") ?? "");
+  const validFrom = String(formData.get("validFrom") ?? "");
+  const validTo = String(formData.get("validTo") ?? "");
+  const daysMask = Array.from({ length: 7 }, (_, i) =>
+    formData.get(`day${i}`) === "on" ? "1" : "0",
+  ).join("");
+  const times = String(formData.get("times") ?? "")
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .sort();
+
+  const route = routeId
+    ? await prisma.route.findUnique({ where: { id: routeId }, select: { id: true } })
+    : null;
+  const valid =
+    route &&
+    isDateKey(validFrom) &&
+    isDateKey(validTo) &&
+    validFrom <= validTo &&
+    times.length > 0 &&
+    times.every(isValidTime) &&
+    daysMask.includes("1");
+  if (!valid) redirect("/admin/timetables?error=invalid");
+
+  const data = { routeId, validFrom, validTo, daysMask, times };
+  await prisma.timetable.upsert({ where: { id }, update: data, create: { id, ...data } });
+  revalidatePath("/admin/timetables");
+  redirect("/admin/timetables?saved=1");
+}
+
+export async function adminDeleteTimetable(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  if (id) await prisma.timetable.deleteMany({ where: { id } });
+  revalidatePath("/admin/timetables");
+  redirect("/admin/timetables");
+}
+
+/** Materialize sailings from a route's patterns, from today to the end of the
+ * patterns' validity. Optionally notifies customers on newly-cancelled
+ * departures via the existing sailing-cancellation email. */
+export async function adminApplyTimetables(formData: FormData) {
+  await requireAdmin();
+  const routeId = String(formData.get("routeId") ?? "");
+  const notify = formData.get("notify") === "on";
+
+  const timetables = await prisma.timetable.findMany({ where: { routeId } });
+  if (!routeId || timetables.length === 0) redirect("/admin/timetables?error=nopatterns");
+
+  const fromKey = madridTodayKey();
+  const toKey = timetables.map((t) => t.validTo).sort().at(-1)!;
+  if (toKey < fromKey) redirect("/admin/timetables?error=expired");
+
+  const result = await applyTimetables(prisma, routeId, fromKey, toKey);
+  if (notify) {
+    for (const reservationId of result.affectedReservationIds) {
+      await sendSailingCancelledEmail(reservationId);
+    }
+  }
+
+  revalidatePath("/admin/timetables");
+  redirect(
+    `/admin/timetables?applied=${routeId}&created=${result.created}&cancelled=${result.cancelled}&deleted=${result.deleted}&kept=${result.kept}`,
+  );
+}
+
+export async function adminMarkOperatorVerified(formData: FormData) {
+  await requireAdmin();
+  const operatorId = String(formData.get("operatorId") ?? "");
+  if (operatorId) {
+    await prisma.operator.update({
+      where: { id: operatorId },
+      data: { scheduleCheckedAt: new Date() },
+    });
+  }
+  revalidatePath("/admin/timetables");
+  redirect("/admin/timetables");
 }

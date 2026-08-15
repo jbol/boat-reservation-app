@@ -60,6 +60,29 @@ describe("formatDateKey", () => {
   });
 });
 
+describe("formatDaysMask", () => {
+  it("renders the full week as a phrase", async () => {
+    const { formatDaysMask } = await import("./format");
+    expect(formatDaysMask("1111111", "es")).toBe("todos los días");
+    expect(formatDaysMask("1111111", "en")).toBe("every day");
+  });
+
+  it("lists days Monday-first from a Sunday-first mask", async () => {
+    const { formatDaysMask } = await import("./format");
+    expect(formatDaysMask("0000010", "en")).toBe("Fri");
+    expect(formatDaysMask("1111101", "en")).toBe("Mon, Tue, Wed, Thu, Sat, Sun");
+    expect(formatDaysMask("1000001", "es")).toBe("sáb, dom");
+  });
+});
+
+describe("formatDateKeyShort", () => {
+  it("is compact and localized", async () => {
+    const { formatDateKeyShort } = await import("./format");
+    expect(formatDateKeyShort("2026-07-04", "en").toLowerCase()).toContain("jul");
+    expect(formatDateKeyShort("2026-07-04", "es")).toContain("4");
+  });
+});
+
 describe("madridTodayKey", () => {
   it("returns a valid date key", () => {
     expect(isDateKey(madridTodayKey())).toBe(true);

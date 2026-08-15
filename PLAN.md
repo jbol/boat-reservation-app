@@ -105,7 +105,7 @@ IntegrationAccount operator, kind (woocommerce | getyourguide | …), credential
 
 ### Phase 2 — Live availability + revenue (Tier 2)
 5. GetYourGuide Partner API / Civitatis affiliate for the Tabarca products → live availability + commission on bookings.
-6. Timetable-drift checks (alert when operator site shows different times than our seed data).
+6. Timetable-drift checks (alert when operator site shows different times than our seed data). ✅ *Foundation shipped 2026-08-15:* timetables are now editable data (admin → Timetables → edit + apply, with customer notifications on removed departures) and every operator has a public schedule page (`/horarios/[slug]`) with verified-on dates and staleness warnings. Automated drift *detection* against operator sites is the remaining piece.
 
 ### Phase 3 — First direct integration (Tier 3)
 7. Approach Kontiki about WooCommerce REST keys / webhook plugin; build the adapter; bookings confirm automatically.

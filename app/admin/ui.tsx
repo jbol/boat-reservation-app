@@ -33,7 +33,11 @@ export function LoginCard({ error }: { error?: boolean }) {
   );
 }
 
-export function AdminNav({ active }: { active: "list" | "new" | "sailings" }) {
+export function AdminNav({
+  active,
+}: {
+  active: "list" | "new" | "sailings" | "timetables";
+}) {
   const base = "rounded-lg px-3 py-2 text-sm font-semibold";
   return (
     <div className="mb-6 flex items-center gap-2">
@@ -48,6 +52,12 @@ export function AdminNav({ active }: { active: "list" | "new" | "sailings" }) {
         className={`${base} ${active === "sailings" ? "bg-sky-700 text-white" : "border border-slate-300 hover:bg-slate-100"}`}
       >
         Sailings
+      </Link>
+      <Link
+        href="/admin/timetables"
+        className={`${base} ${active === "timetables" ? "bg-sky-700 text-white" : "border border-slate-300 hover:bg-slate-100"}`}
+      >
+        Timetables
       </Link>
       <Link
         href="/admin/new"
