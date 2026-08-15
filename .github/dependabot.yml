@@ -1,0 +1,14 @@
+# Weekly grouped dependency updates — CI (lint/typecheck/unit/build + E2E)
+# gates every PR, so security patches arrive as merge-ready green PRs instead
+# of hosting-provider warning emails.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
