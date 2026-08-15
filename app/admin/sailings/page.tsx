@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/adminAuth";
+import { TabarcaWeatherWidget } from "../../weather";
 import { adminSetSailingStatus } from "@/lib/actions";
 import { isDateKey, madridTodayKey } from "@/lib/format";
 import { AdminNav, LoginCard } from "../ui";
@@ -36,6 +38,12 @@ export default async function AdminSailingsPage({
         Cancel a sailing when the operator calls it off (sea conditions, etc.). Active
         reservations on it can be notified by email automatically.
       </p>
+
+      <div className="mb-4">
+        <Suspense fallback={null}>
+          <TabarcaWeatherWidget />
+        </Suspense>
+      </div>
 
       <form method="GET" action="/admin/sailings" className="mb-4 flex items-end gap-2 text-sm">
         <label className="flex flex-col gap-1 font-medium text-slate-700">

@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { getDict } from "@/lib/i18n";
+import { TabarcaWeatherWidget } from "./weather";
 import {
   euros,
   formatDateKey,
@@ -116,6 +118,10 @@ export default async function Home({
           </nav>
         </form>
       </section>
+
+      <Suspense fallback={null}>
+        <TabarcaWeatherWidget />
+      </Suspense>
 
       <section>
         <h2 className="mb-1 text-lg font-semibold text-slate-800">

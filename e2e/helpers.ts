@@ -8,7 +8,7 @@ export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "tabarca-admin";
 /** Pin the UI to English so assertions are locale-deterministic. */
 export async function useEnglish(page: Page) {
   await page.goto("/lang/en");
-  await expect(page.getByRole("link", { name: "EN" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "EN", exact: true })).toBeVisible();
 }
 
 export async function loginAdmin(page: Page) {
