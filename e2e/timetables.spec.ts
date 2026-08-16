@@ -48,7 +48,9 @@ test("edit pattern → apply → sailing appears on home → revert", async ({ p
     .filter({ has: page.locator('input[name="id"][value="tt-kontiki-fri"]') })
     .filter({ has: page.getByRole("button", { name: "Save" }) });
   const timesInput = friForm.getByLabel(/Departure times/);
-  const original = await timesInput.inputValue();
+  // Self-healing: strip our own test artifact in case a previous run failed
+  // mid-test and left the pattern dirty — "original" must be the clean value.
+  const original = (await timesInput.inputValue()).replace(/,?\s*20:00/g, "");
 
   const applyForm = page
     .locator("form")
@@ -64,7 +66,8 @@ test("edit pattern → apply → sailing appears on home → revert", async ({ p
   await expect(page.getByText(/Applied to route-kontiki-alicante/)).toBeVisible();
 
   await page.goto(`/?date=${friday}&from=alicante`);
-  await expect(page.getByText("20:00")).toBeVisible();
+  // Scoped to sailing cards — the weather strip also shows a "20:00" hour.
+  await expect(page.getByRole("listitem").filter({ hasText: "20:00" })).toHaveCount(1);
 
   // Revert the pattern and apply again — the empty 20:00 sailings are removed.
   await page.goto("/admin/timetables");
@@ -76,5 +79,5 @@ test("edit pattern → apply → sailing appears on home → revert", async ({ p
   await expect(page.getByText(/Applied to route-kontiki-alicante/)).toBeVisible();
 
   await page.goto(`/?date=${friday}&from=alicante`);
-  await expect(page.getByText("20:00")).toHaveCount(0);
+  await expect(page.getByRole("listitem").filter({ hasText: "20:00" })).toHaveCount(0);
 });

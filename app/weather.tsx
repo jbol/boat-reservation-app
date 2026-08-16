@@ -3,6 +3,7 @@ import {
   compassDir,
   describeWeather,
   getTabarcaWeather,
+  isRoughConditions,
   isRoughSea,
 } from "@/lib/weather";
 
@@ -57,6 +58,30 @@ export async function TabarcaWeatherWidget() {
           Open-Meteo
         </a>
       </div>
+      {weather.hours.length > 0 && (
+        <div className="mt-3 flex gap-1 overflow-x-auto pb-1">
+          {weather.hours.map((h) => {
+            const hourRough = isRoughConditions(h.gustKmh, h.waveM);
+            const { icon: hourIcon } = describeWeather(h.code, locale);
+            return (
+              <div
+                key={h.time}
+                title={hourRough ? d.roughSeaWarning : undefined}
+                className={`flex min-w-12 flex-shrink-0 flex-col items-center rounded-lg px-1 py-1.5 text-xs ${
+                  hourRough ? "bg-amber-100" : "bg-slate-50"
+                }`}
+              >
+                <span className="text-slate-500">{h.time}</span>
+                <span className="text-base" aria-hidden>
+                  {hourIcon}
+                </span>
+                <span className="font-semibold text-slate-800">{fmt(h.tempC)}°</span>
+                <span className="text-[10px] text-slate-500">{fmt(h.gustKmh)} km/h</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
       {rough && (
         <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
           {d.roughSeaWarning}
