@@ -23,8 +23,8 @@ test("public schedule page shows patterns and verified chip", async ({ page }) =
   await page.goto("/horarios/kontiki");
   await expect(page.getByRole("heading", { name: "Cruceros Kontiki schedules" })).toBeVisible();
   await expect(page.getByText("Schedules verified on")).toBeVisible();
-  // Outbound pattern row: the non-Friday times.
-  await expect(page.getByText("09:45 · 10:45 · 12:00 · 13:15")).toBeVisible();
+  // Outbound pattern row (daily, per the 2026-08-17 re-verification).
+  await expect(page.getByText("09:45 · 10:45 · 12:15 · 13:15")).toBeVisible();
   // Return route section is on the same page (EN port names — locale is pinned).
   await expect(page.getByText("Tabarca Island → Alicante")).toBeVisible();
 });
@@ -42,10 +42,10 @@ test("edit pattern → apply → sailing appears on home → revert", async ({ p
   await loginAdmin(page);
   await page.goto("/admin/timetables");
 
-  // The save-form for Kontiki's Friday pattern (has the id input AND a Save button).
+  // The save-form for Kontiki's daily pattern (has the id input AND a Save button).
   const friForm = page
     .locator("form")
-    .filter({ has: page.locator('input[name="id"][value="tt-kontiki-fri"]') })
+    .filter({ has: page.locator('input[name="id"][value="tt-kontiki-main"]') })
     .filter({ has: page.getByRole("button", { name: "Save" }) });
   const timesInput = friForm.getByLabel(/Departure times/);
   // Self-healing: strip our own test artifact in case a previous run failed

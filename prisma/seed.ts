@@ -1,6 +1,10 @@
 /**
  * Seed data transcribed from the operators' public websites on 2026-07-04
  * (Kontiki, Transtabarca, Tabarkeras) and 2026-07-21 (Marítimas Torrevieja).
+ * Re-verified 2026-08-17: Kontiki unified to one daily pattern (12:00→12:15,
+ * Friday gains 13:15, 17:30 return dropped); Transtabarca reshuffled
+ * (daily 09:00 added, 12:00/18:30/19:30 → 18:15/18:45/19:45, weekend
+ * fast-boat extras expanded, 19:00 return added); Marítimas unchanged.
  * Summer 2026 timetables — operators warn that times can change without
  * notice, so verify against their sites before relying on this in production.
  * Checked and NOT seeded (no 2026 service): Benidorm & El Campello (EMB
@@ -41,7 +45,7 @@ async function main() {
       "Catamarans from Alicante port since 1966, two with underwater viewing. Round-trip ticket with open return.",
     tier: "deeplink",
     scheduleVerified: true,
-    scheduleCheckedAt: new Date("2026-07-04"),
+    scheduleCheckedAt: new Date("2026-08-17"),
   };
   await prisma.operator.upsert({ where: { id: kontiki.id }, update: kontiki, create: kontiki });
 
@@ -53,9 +57,9 @@ async function main() {
     durationNoteEs: "aprox.",
     durationNoteEn: "approx.",
     returnNoteEs:
-      "Regreso abierto — vuelve en cualquier barco. Salidas desde Tabarca: lun–jue y dom 16:00, 17:30 y 18:15 · vie y sáb 16:00 y 18:15.",
+      "Regreso abierto — vuelve en cualquier barco. Salidas desde Tabarca: 16:00 y 18:15, todos los días.",
     returnNoteEn:
-      "Open return — take any boat back. Departures from Tabarca: Mon–Thu & Sun 16:00, 17:30 & 18:15 · Fri & Sat 16:00 & 18:15.",
+      "Open return — take any boat back. Departures from Tabarca: 16:00 & 18:15, every day.",
   };
   await prisma.route.upsert({
     where: { id: kontikiRoute.id },
@@ -102,7 +106,7 @@ async function main() {
       "Fast boats (15 min) and underwater-vision catamarans (25 min) from Santa Pola. Open ticket: travel at whichever time suits you.",
     tier: "deeplink",
     scheduleVerified: true,
-    scheduleCheckedAt: new Date("2026-07-04"),
+    scheduleCheckedAt: new Date("2026-08-17"),
   };
   await prisma.operator.upsert({
     where: { id: transtabarca.id },
@@ -118,9 +122,9 @@ async function main() {
     durationNoteEs: "15 min barco rápido · 25 min catamarán",
     durationNoteEn: "15 min fast boat · 25 min catamaran",
     returnNoteEs:
-      "Ticket abierto — regresa en cualquier barco. Salidas desde Tabarca: 10:30, 11:15, 12:10, 12:45, 13:45, 14:50, 16:15, 17:10, 18:10, 19:30 y 20:30.",
+      "Ticket abierto — regresa en cualquier barco. Salidas desde Tabarca: 10:30, 11:15, 12:10, 12:45, 13:45, 14:50, 16:15, 17:10, 18:10, 19:00, 19:30 y 20:30.",
     returnNoteEn:
-      "Open ticket — take any boat back. Departures from Tabarca: 10:30, 11:15, 12:10, 12:45, 13:45, 14:50, 16:15, 17:10, 18:10, 19:30 & 20:30.",
+      "Open ticket — take any boat back. Departures from Tabarca: 10:30, 11:15, 12:10, 12:45, 13:45, 14:50, 16:15, 17:10, 18:10, 19:00, 19:30 & 20:30.",
   };
   await prisma.route.upsert({ where: { id: transRoute.id }, update: transRoute, create: transRoute });
 
@@ -195,7 +199,7 @@ async function main() {
       "Underwater-vision catamaran from Torrevieja port, sailing since 1989. Day trip: ~1 h crossing and 5–6 h on the island. Pets travel free; reduced-mobility access.",
     tier: "deeplink",
     scheduleVerified: true,
-    scheduleCheckedAt: new Date("2026-07-21"),
+    scheduleCheckedAt: new Date("2026-08-17"),
   };
   await prisma.operator.upsert({ where: { id: maritimas.id }, update: maritimas, create: maritimas });
 
@@ -310,26 +314,28 @@ async function main() {
   const AUG_FROM = "2026-08-01";
   const AUG_TO = "2026-08-31";
   const timetables = [
-    // Kontiki outbound: Mon–Thu, Sat, Sun 4 sailings · Fri 3
-    { id: "tt-kontiki-main", routeId: "route-kontiki-alicante", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1111101", times: ["09:45", "10:45", "12:00", "13:15"] },
-    { id: "tt-kontiki-fri", routeId: "route-kontiki-alicante", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "0000010", times: ["09:45", "10:45", "12:15"] },
-    // Transtabarca outbound: daily base + weekend 09:30 extra
-    { id: "tt-trans-base", routeId: "route-transtabarca-santa-pola", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1111111", times: ["10:00", "10:45", "11:30", "12:00", "12:30", "13:00", "14:00", "15:30", "16:30", "17:30", "18:30", "19:30"] },
-    { id: "tt-trans-weekend", routeId: "route-transtabarca-santa-pola", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1000001", times: ["09:30"] },
+    // Kontiki outbound: one daily pattern since the 2026-08-17 re-verification
+    { id: "tt-kontiki-main", routeId: "route-kontiki-alicante", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1111111", times: ["09:45", "10:45", "12:15", "13:15"] },
+    // Transtabarca outbound: daily base + weekend fast-boat extras (limited seats)
+    { id: "tt-trans-base", routeId: "route-transtabarca-santa-pola", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1111111", times: ["09:00", "10:00", "10:45", "11:30", "12:30", "13:00", "14:00", "15:30", "16:30", "17:30", "18:15", "18:45", "19:45"] },
+    { id: "tt-trans-weekend", routeId: "route-transtabarca-santa-pola", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1000001", times: ["08:30", "09:30", "10:30", "11:00", "12:00", "12:30", "13:30", "14:45"] },
     // Marítimas Torrevieja outbound: Jul & Sep daily 10:45 · Aug Mon–Sat 2 rotations, Sun 10:45
     { id: "tt-mt-jul", routeId: "route-maritimas-torrevieja", validFrom: SEASON_START, validTo: "2026-07-31", daysMask: "1111111", times: ["10:45"] },
     { id: "tt-mt-sep", routeId: "route-maritimas-torrevieja", validFrom: "2026-09-01", validTo: SEASON_END, daysMask: "1111111", times: ["10:45"] },
     { id: "tt-mt-aug-mosat", routeId: "route-maritimas-torrevieja", validFrom: AUG_FROM, validTo: AUG_TO, daysMask: "0111111", times: ["09:30", "12:15"] },
     { id: "tt-mt-aug-sun", routeId: "route-maritimas-torrevieja", validFrom: AUG_FROM, validTo: AUG_TO, daysMask: "1000000", times: ["10:45"] },
     // Returns from Tabarca
-    { id: "tt-kontiki-ret-main", routeId: "route-kontiki-return", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1111100", times: ["16:00", "17:30", "18:15"] },
-    { id: "tt-kontiki-ret-frisat", routeId: "route-kontiki-return", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "0000011", times: ["16:00", "18:15"] },
-    { id: "tt-trans-ret", routeId: "route-transtabarca-return", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1111111", times: ["10:30", "11:15", "12:10", "12:45", "13:45", "14:50", "16:15", "17:10", "18:10", "19:30", "20:30"] },
+    { id: "tt-kontiki-ret-main", routeId: "route-kontiki-return", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1111111", times: ["16:00", "18:15"] },
+    { id: "tt-trans-ret", routeId: "route-transtabarca-return", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1111111", times: ["10:30", "11:15", "12:10", "12:45", "13:45", "14:50", "16:15", "17:10", "18:10", "19:00", "19:30", "20:30"] },
     { id: "tt-mt-ret-jul", routeId: "route-maritimas-return", validFrom: SEASON_START, validTo: "2026-07-31", daysMask: "1111111", times: ["18:30"] },
     { id: "tt-mt-ret-sep", routeId: "route-maritimas-return", validFrom: "2026-09-01", validTo: SEASON_END, daysMask: "1111111", times: ["18:30"] },
     { id: "tt-mt-ret-aug-mosat", routeId: "route-maritimas-return", validFrom: AUG_FROM, validTo: AUG_TO, daysMask: "0111111", times: ["17:30", "20:15"] },
     { id: "tt-mt-ret-aug-sun", routeId: "route-maritimas-return", validFrom: AUG_FROM, validTo: AUG_TO, daysMask: "1000000", times: ["19:00"] },
   ];
+  // Patterns retired by the 2026-08-17 re-verification (Kontiki unified daily).
+  await prisma.timetable.deleteMany({
+    where: { id: { in: ["tt-kontiki-fri", "tt-kontiki-ret-frisat"] } },
+  });
   for (const t of timetables) {
     await prisma.timetable.upsert({ where: { id: t.id }, update: t, create: t });
   }
