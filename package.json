@@ -20,12 +20,12 @@
     "@prisma/client": "^6.19.3",
     "geist": "^1.7.2",
     "next": "^16.2.11",
-    "nodemailer": "^9.0.3",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "nodemailer": "^9.0.5",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "@playwright/test": "^1.61.1",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.1",
@@ -33,11 +33,11 @@
     "@types/react-dom": "^19",
     "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^9",
-    "eslint-config-next": "^16.2.11",
+    "eslint-config-next": "^16.3.1",
     "husky": "^9.1.7",
     "prisma": "^6.19.3",
     "tailwindcss": "^4",
-    "tsx": "^4.23.0",
+    "tsx": "^4.23.12",
     "typescript": "^5",
     "vitest": "^4.1.10"
   },
