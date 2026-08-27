@@ -17,7 +17,7 @@
     "prepare": "husky || true"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.3",
+    "@prisma/client": "^7.9.1",
     "geist": "^1.7.2",
     "next": "^16.2.11",
     "nodemailer": "^9.0.3",
