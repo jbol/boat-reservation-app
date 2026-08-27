@@ -7,6 +7,7 @@ import {
   adminSaveTimetable,
 } from "@/lib/actions";
 import { timesOf } from "@/lib/timetables";
+import { driftFlags } from "@/lib/scheduleWatch";
 import { AdminNav, LoginCard } from "../ui";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -57,15 +58,19 @@ export default async function AdminTimetablesPage({
   const sp = await searchParams;
   if (!(await isAdmin())) return <LoginCard />;
 
-  const operators = await prisma.operator.findMany({
-    where: { scheduleVerified: true },
-    orderBy: { name: "asc" },
-    include: {
-      routes: {
-        include: { originPort: true, timetables: { orderBy: [{ validFrom: "asc" }, { id: "asc" }] } },
+  const [operators, drift] = await Promise.all([
+    prisma.operator.findMany({
+      where: { scheduleVerified: true },
+      orderBy: { name: "asc" },
+      include: {
+        routes: {
+          include: { originPort: true, timetables: { orderBy: [{ validFrom: "asc" }, { id: "asc" }] } },
+        },
       },
-    },
-  });
+    }),
+    driftFlags(),
+  ]);
+  const operatorName = new Map(operators.map((o) => [o.id, o.name]));
 
   const banner =
     typeof sp.applied === "string"
@@ -90,6 +95,24 @@ export default async function AdminTimetablesPage({
         created, vanished ones with bookings are cancelled (optionally emailing customers),
         empty ones are removed. Weather cancellations are never resurrected.
       </p>
+
+      {drift.length > 0 && (
+        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          <p className="font-semibold">⚠ Schedule pages changed since last verification:</p>
+          <ul className="mt-1 list-disc pl-5">
+            {drift.map((f) => (
+              <li key={f.operatorId}>
+                {operatorName.get(f.operatorId) ?? f.operatorId} — page changed{" "}
+                {f.lastChangedAt.toISOString().slice(0, 10)} ·{" "}
+                <a href={f.url} target="_blank" rel="noopener noreferrer" className="underline">
+                  view page
+                </a>
+                . Re-verify, update the patterns if needed, then &ldquo;Mark verified today&rdquo;.
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {banner && (
         <p className={`mb-4 rounded-lg border p-3 text-sm ${sp.error ? "border-red-200 bg-red-50 text-red-700" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>

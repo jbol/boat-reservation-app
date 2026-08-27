@@ -140,6 +140,21 @@ model Reservation {
   @@index([createdAt])
 }
 
+// Daily drift tripwire: one row per watched operator schedule page. When the
+// extracted fingerprint (times + prices on the page) changes, lastChangedAt
+// updates; admin flags operators whose page changed after their last
+// verification (Operator.scheduleCheckedAt).
+model ScheduleSnapshot {
+  id            String    @id // operator slug + source key
+  operatorId    String
+  url           String
+  fingerprint   String    @db.Text // sorted times + prices extracted from the page
+  fetchedAt     DateTime
+  lastChangedAt DateTime?
+
+  @@index([operatorId])
+}
+
 enum SailingStatus {
   SCHEDULED
   CANCELLED
