@@ -198,8 +198,8 @@ export function BoatCardsGrid({
                   <p
                     className={`mt-auto rounded-lg border px-2.5 py-1.5 text-xs font-semibold ${
                       gone
-                        ? "border-red-200 bg-red-50 text-red-700"
-                        : "border-sky-200 bg-sky-50 text-sky-900"
+                        ? "border-red-300 bg-red-100 text-red-700"
+                        : "border-rose-200 bg-rose-50 text-rose-900"
                     }`}
                   >
                     ⏱ {d.lastBoatBack}:{" "}
