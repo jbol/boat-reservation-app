@@ -8,9 +8,11 @@ import {
   formatDateKey,
   isDateKey,
   isScheduleStale,
+  madridNowTime,
   madridTodayKey,
   shiftDateKey,
 } from "@/lib/format";
+import { BoatCardsGrid, buildBoatCards } from "./boatCards";
 
 export default async function Home({
   searchParams,
@@ -30,15 +32,9 @@ export default async function Home({
   const from =
     typeof sp.from === "string" && ports.some((p) => p.slug === sp.from) ? sp.from : "";
 
-  const [sailings, unverifiedOperators, verifiedAgg] = await Promise.all([
+  const [allSailings, unverifiedOperators, verifiedAgg] = await Promise.all([
     prisma.sailing.findMany({
-      where: {
-        dateKey,
-        status: "SCHEDULED",
-        // Default view = boats TO Tabarca; picking "Isla de Tabarca" in the
-        // From selector switches to the return crossings instead.
-        route: { originPort: { slug: from || { not: "tabarca" } } },
-      },
+      where: { dateKey, status: "SCHEDULED" },
       include: {
         route: { include: { operator: true, originPort: true, fares: true } },
       },
@@ -50,6 +46,22 @@ export default async function Home({
       _min: { scheduleCheckedAt: true },
     }),
   ]);
+
+  // Boat-first view: one card per operator with that day's out + return times.
+  const returnsOnly = from === "tabarca";
+  const cards = buildBoatCards(allSailings).filter(
+    (c) => returnsOnly || !from || c.route?.originPort.slug === from,
+  );
+  // Secondary by-time list: default = boats TO Tabarca; "Isla de Tabarca" in
+  // the From selector switches it to the return crossings instead.
+  const sailings = allSailings.filter((s) =>
+    returnsOnly
+      ? s.route.originPort.slug === "tabarca"
+      : s.route.originPort.slug !== "tabarca" &&
+        (!from || s.route.originPort.slug === from),
+  );
+  const nowTime = madridNowTime();
+  const isToday = dateKey === today;
 
   const dateHref = (key: string) => `/?date=${key}${from ? `&from=${from}` : ""}`;
   const oldestCheck = verifiedAgg._min.scheduleCheckedAt;
@@ -137,6 +149,23 @@ export default async function Home({
             {checksAreStale ? ` — ${d.staleWarning}` : ""}
           </p>
         )}
+
+        {cards.length > 0 && (
+          <div className="mb-6">
+            <BoatCardsGrid
+              cards={cards}
+              locale={locale}
+              d={d}
+              returnsOnly={returnsOnly}
+              nowTime={nowTime}
+              isToday={isToday}
+            />
+          </div>
+        )}
+
+        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          {d.byTimeHeading}
+        </h3>
 
         {sailings.length === 0 ? (
           <p className="rounded-xl border border-slate-200 bg-white p-6 text-slate-600">

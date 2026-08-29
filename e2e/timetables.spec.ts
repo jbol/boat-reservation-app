@@ -54,7 +54,7 @@ test("edit pattern → apply → sailing appears on home → revert", async ({ p
 
   const applyForm = page
     .locator("form")
-    .filter({ has: page.locator('input[name="routeId"][value="route-kontiki-alicante"]') })
+    .filter({ has: page.locator('input[name="operatorId"][value="op-kontiki"]') })
     .filter({ has: page.getByRole("button", { name: "Apply timetables" }) });
 
   // Add a 20:00 Friday departure and apply (without emailing anyone).
@@ -63,7 +63,7 @@ test("edit pattern → apply → sailing appears on home → revert", async ({ p
   await expect(page.getByText("Pattern saved")).toBeVisible();
   await applyForm.getByRole("checkbox").uncheck();
   await applyForm.getByRole("button", { name: "Apply timetables" }).click();
-  await expect(page.getByText(/Applied to route-kontiki-alicante/)).toBeVisible();
+  await expect(page.getByText(/Applied Cruceros Kontiki/)).toBeVisible();
 
   await page.goto(`/?date=${friday}&from=alicante`);
   // Scoped to sailing cards — the weather strip also shows a "20:00" hour.
@@ -76,7 +76,7 @@ test("edit pattern → apply → sailing appears on home → revert", async ({ p
   await expect(page.getByText("Pattern saved")).toBeVisible();
   await applyForm.getByRole("checkbox").uncheck();
   await applyForm.getByRole("button", { name: "Apply timetables" }).click();
-  await expect(page.getByText(/Applied to route-kontiki-alicante/)).toBeVisible();
+  await expect(page.getByText(/Applied Cruceros Kontiki/)).toBeVisible();
 
   await page.goto(`/?date=${friday}&from=alicante`);
   await expect(page.getByRole("listitem").filter({ hasText: "20:00" })).toHaveCount(0);

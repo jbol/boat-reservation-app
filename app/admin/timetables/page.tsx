@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/adminAuth";
+import Link from "next/link";
 import {
-  adminApplyTimetables,
+  adminApplyOperatorTimetables,
   adminDeleteTimetable,
   adminMarkOperatorVerified,
   adminSaveTimetable,
@@ -72,9 +73,16 @@ export default async function AdminTimetablesPage({
   ]);
   const operatorName = new Map(operators.map((o) => [o.id, o.name]));
 
+  // Per-company tabs — schedule changes arrive one operator at a time.
+  const tab =
+    typeof sp.operator === "string" && operators.some((o) => o.slug === sp.operator)
+      ? sp.operator
+      : "";
+  const visibleOperators = operators.filter((o) => !tab || o.slug === tab);
+
   const banner =
     typeof sp.applied === "string"
-      ? `Applied to ${sp.applied}: ${sp.created} created · ${sp.cancelled} cancelled (booked) · ${sp.deleted} removed · ${sp.kept} unchanged`
+      ? `Applied ${operatorName.get(sp.applied) ?? sp.applied}: ${sp.created} created · ${sp.cancelled} cancelled (booked) · ${sp.deleted} removed · ${sp.kept} unchanged`
       : sp.saved
         ? "Pattern saved. Remember to apply the route's timetables to update the sailings."
         : sp.error === "invalid"
@@ -120,19 +128,50 @@ export default async function AdminTimetablesPage({
         </p>
       )}
 
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+        <Link
+          href="/admin/timetables"
+          className={`rounded-lg px-3 py-1.5 font-semibold ${!tab ? "bg-sky-700 text-white" : "border border-slate-300 hover:bg-slate-100"}`}
+        >
+          All companies
+        </Link>
+        {operators.map((o) => (
+          <Link
+            key={o.slug}
+            href={`/admin/timetables?operator=${o.slug}`}
+            className={`rounded-lg px-3 py-1.5 font-semibold ${tab === o.slug ? "bg-sky-700 text-white" : "border border-slate-300 hover:bg-slate-100"}`}
+          >
+            {o.name}
+          </Link>
+        ))}
+      </div>
+
       <div className="space-y-8">
-        {operators.map((op) => (
+        {visibleOperators.map((op) => (
           <section key={op.id} className="rounded-xl border border-slate-200 bg-white p-4">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-semibold">{op.name}</h2>
-              <form action={adminMarkOperatorVerified} className="flex items-center gap-2 text-xs text-slate-500">
-                <span>
-                  verified:{" "}
-                  {op.scheduleCheckedAt ? op.scheduleCheckedAt.toISOString().slice(0, 10) : "never"}
-                </span>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <h2 className="font-semibold">{op.name}</h2>
+                <form action={adminMarkOperatorVerified} className="flex items-center gap-2 text-xs text-slate-500">
+                  <span>
+                    verified:{" "}
+                    {op.scheduleCheckedAt ? op.scheduleCheckedAt.toISOString().slice(0, 10) : "never"}
+                  </span>
+                  <input type="hidden" name="operatorId" value={op.id} />
+                  <button type="submit" className="rounded border border-slate-300 px-2 py-1 font-semibold hover:bg-slate-100">
+                    Mark verified today
+                  </button>
+                </form>
+              </div>
+              {/* One apply per company — covers outbound AND return routes. */}
+              <form action={adminApplyOperatorTimetables} className="flex items-center gap-2 text-xs">
                 <input type="hidden" name="operatorId" value={op.id} />
-                <button type="submit" className="rounded border border-slate-300 px-2 py-1 font-semibold hover:bg-slate-100">
-                  Mark verified today
+                <label className="flex items-center gap-1 text-slate-600">
+                  <input type="checkbox" name="notify" defaultChecked />
+                  email affected customers
+                </label>
+                <button type="submit" className="rounded bg-sky-700 px-3 py-1.5 font-semibold text-white hover:bg-sky-800">
+                  Apply timetables
                 </button>
               </form>
             </div>
@@ -143,16 +182,6 @@ export default async function AdminTimetablesPage({
                   <h3 className="text-sm font-semibold text-slate-700">
                     {route.originPort.nameEs} → {route.destinationEs}
                   </h3>
-                  <form action={adminApplyTimetables} className="flex items-center gap-2 text-xs">
-                    <input type="hidden" name="routeId" value={route.id} />
-                    <label className="flex items-center gap-1 text-slate-600">
-                      <input type="checkbox" name="notify" defaultChecked />
-                      email affected customers
-                    </label>
-                    <button type="submit" className="rounded bg-sky-700 px-2 py-1 font-semibold text-white hover:bg-sky-800">
-                      Apply timetables
-                    </button>
-                  </form>
                 </div>
 
                 <div className="space-y-3">

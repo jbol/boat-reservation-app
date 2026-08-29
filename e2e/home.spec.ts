@@ -36,6 +36,21 @@ test("port filter narrows the list to one origin", async ({ page }) => {
   await expect(page.getByText("Day trip (fixed return)").first()).toBeVisible();
 });
 
+test("boat cards show out and return times; time chips open booking", async ({ page }) => {
+  await page.goto(`/?date=${SEED_DATE}`);
+
+  // Leaf sections only — the page also wraps the whole sailings area in a <section>.
+  const kontikiCard = page
+    .locator("section:not(:has(section))")
+    .filter({ has: page.getByRole("heading", { name: "Cruceros Kontiki" }) });
+  await expect(kontikiCard.getByText("Out", { exact: true })).toBeVisible();
+  await expect(kontikiCard.getByText("Return", { exact: true })).toBeVisible();
+
+  // Outbound chips are the booking entry point; return chips are not links.
+  await kontikiCard.getByRole("link", { name: "09:45" }).click();
+  await expect(page.getByRole("heading", { name: "Book your trip" })).toBeVisible();
+});
+
 test("Tabarca option shows return boats, informational only", async ({ page }) => {
   await page.goto(`/?date=${SEED_DATE}`);
   await page.getByLabel("From").selectOption("tabarca");

@@ -13,6 +13,16 @@ export function madridTodayKey(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Madrid" });
 }
 
+/** Current time "HH:MM" in Europe/Madrid — for dimming already-departed boats. */
+export function madridNowTime(): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Madrid",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date());
+}
+
 export function shiftDateKey(dateKey: string, days: number): string {
   const d = new Date(`${dateKey}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);

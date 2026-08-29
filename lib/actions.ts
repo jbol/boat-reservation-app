@@ -401,31 +401,47 @@ export async function adminDeleteTimetable(formData: FormData) {
   redirect("/admin/timetables");
 }
 
-/** Materialize sailings from a route's patterns, from today to the end of the
- * patterns' validity. Optionally notifies customers on newly-cancelled
- * departures via the existing sailing-cancellation email. */
-export async function adminApplyTimetables(formData: FormData) {
+/** Materialize sailings from ALL of one operator's routes (outbound and
+ * return together), from today to the end of the patterns' validity.
+ * Optionally notifies customers on newly-cancelled departures. */
+export async function adminApplyOperatorTimetables(formData: FormData) {
   await requireAdmin();
-  const routeId = String(formData.get("routeId") ?? "");
+  const operatorId = String(formData.get("operatorId") ?? "");
   const notify = formData.get("notify") === "on";
 
-  const timetables = await prisma.timetable.findMany({ where: { routeId } });
-  if (!routeId || timetables.length === 0) redirect("/admin/timetables?error=nopatterns");
+  const routes = operatorId
+    ? await prisma.route.findMany({ where: { operatorId }, select: { id: true } })
+    : [];
+  const timetables = await prisma.timetable.findMany({
+    where: { routeId: { in: routes.map((r) => r.id) } },
+  });
+  if (!operatorId || timetables.length === 0) {
+    redirect("/admin/timetables?error=nopatterns");
+  }
 
   const fromKey = madridTodayKey();
   const toKey = timetables.map((t) => t.validTo).sort().at(-1)!;
   if (toKey < fromKey) redirect("/admin/timetables?error=expired");
 
-  const result = await applyTimetables(prisma, routeId, fromKey, toKey);
+  const totals = { created: 0, cancelled: 0, deleted: 0, kept: 0 };
+  const affected: string[] = [];
+  for (const routeId of [...new Set(timetables.map((t) => t.routeId))]) {
+    const result = await applyTimetables(prisma, routeId, fromKey, toKey);
+    totals.created += result.created;
+    totals.cancelled += result.cancelled;
+    totals.deleted += result.deleted;
+    totals.kept += result.kept;
+    affected.push(...result.affectedReservationIds);
+  }
   if (notify) {
-    for (const reservationId of result.affectedReservationIds) {
+    for (const reservationId of affected) {
       await sendSailingCancelledEmail(reservationId);
     }
   }
 
   revalidatePath("/admin/timetables");
   redirect(
-    `/admin/timetables?applied=${routeId}&created=${result.created}&cancelled=${result.cancelled}&deleted=${result.deleted}&kept=${result.kept}`,
+    `/admin/timetables?applied=${operatorId}&created=${totals.created}&cancelled=${totals.cancelled}&deleted=${totals.deleted}&kept=${totals.kept}`,
   );
 }
 
