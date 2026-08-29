@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { getDict } from "@/lib/i18n";
-import { TabarcaWeatherWidget } from "./weather";
+import { TabarcaWeatherWidget, WeatherSkeleton } from "./weather";
 import {
   euros,
   formatDateKey,
@@ -131,7 +131,7 @@ export default async function Home({
         </form>
       </section>
 
-      <Suspense fallback={null}>
+      <Suspense fallback={<WeatherSkeleton />}>
         <TabarcaWeatherWidget />
       </Suspense>
 
@@ -193,6 +193,7 @@ export default async function Home({
                     <p className="font-semibold text-slate-900">
                       <Link
                         href={`/horarios/${route.operator.slug}`}
+                        prefetch={false}
                         className="hover:text-sky-800 hover:underline"
                         title={d.seeSchedule}
                       >
@@ -228,6 +229,7 @@ export default async function Home({
                       )}
                       <Link
                         href={`/book/${s.id}`}
+                        prefetch={false}
                         className="rounded-lg bg-sky-700 px-4 py-2 font-semibold text-white hover:bg-sky-800"
                       >
                         {d.book}

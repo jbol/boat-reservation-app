@@ -80,6 +80,7 @@ function TimeChips({
           <Link
             key={s.id}
             href={`/book/${s.id}`}
+            prefetch={false}
             className="rounded-lg bg-sky-700 px-2.5 py-1.5 text-sm font-semibold tabular-nums text-white hover:bg-sky-800"
           >
             {s.departureTime}
@@ -126,6 +127,7 @@ export function BoatCardsGrid({
                 <h3 className="font-bold text-slate-900">
                   <Link
                     href={`/horarios/${card.operator.slug}`}
+                    prefetch={false}
                     className="hover:text-sky-800 hover:underline"
                     title={d.seeSchedule}
                   >

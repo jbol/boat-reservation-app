@@ -6,6 +6,17 @@ const nextConfig: NextConfig = {
   output: process.env.BUILD_STANDALONE ? "standalone" : undefined,
   // A stray lockfile in the home directory makes Turbopack mis-infer the root.
   turbopack: { root: process.cwd() },
+  // Canonicalize www → apex (single permanent redirect, host-matched).
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host" as const, value: "www.tabarcaboats.com" }],
+        destination: "https://tabarcaboats.com/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

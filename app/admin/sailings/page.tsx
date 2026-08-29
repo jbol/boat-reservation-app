@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/adminAuth";
-import { TabarcaWeatherWidget } from "../../weather";
+import { TabarcaWeatherWidget, WeatherSkeleton } from "../../weather";
 import { adminSetSailingStatus } from "@/lib/actions";
 import { isDateKey, madridTodayKey } from "@/lib/format";
 import { AdminNav, LoginCard } from "../ui";
@@ -40,7 +40,7 @@ export default async function AdminSailingsPage({
       </p>
 
       <div className="mb-4">
-        <Suspense fallback={null}>
+        <Suspense fallback={<WeatherSkeleton />}>
           <TabarcaWeatherWidget />
         </Suspense>
       </div>
