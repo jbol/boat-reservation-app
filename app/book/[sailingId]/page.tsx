@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getDict, op } from "@/lib/i18n";
@@ -129,6 +130,13 @@ export default async function BookPage({
         </fieldset>
 
         <p className="text-sm text-slate-600">{op(d.payNote, route.operator.name)}</p>
+        <p className="text-xs text-slate-500">
+          {d.byAccepting}{" "}
+          <Link href="/privacidad" className="text-sky-700 hover:underline">
+            {d.privacyPolicyLinkText}
+          </Link>
+          .
+        </p>
 
         <button
           type="submit"

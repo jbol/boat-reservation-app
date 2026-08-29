@@ -18,7 +18,8 @@ export default async function AdminPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const sp = await searchParams;
-  if (!(await isAdmin())) return <LoginCard error={!!sp.error} />;
+  if (!(await isAdmin()))
+    return <LoginCard error={typeof sp.error === "string" ? sp.error : undefined} />;
 
   const status =
     typeof sp.status === "string" && sp.status in ReservationStatus

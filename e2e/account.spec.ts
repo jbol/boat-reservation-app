@@ -5,6 +5,26 @@ test.beforeEach(async ({ page }) => {
   await useEnglish(page);
 });
 
+test("login is rate limited after repeated failures for the same email", async ({ page }) => {
+  const email = `rl-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
+
+  for (let i = 0; i < 5; i++) {
+    await page.goto("/account");
+    const login = page.locator("form", { has: page.getByRole("button", { name: "Log in" }) });
+    await login.getByLabel("Email").fill(email);
+    await login.getByLabel("Password").fill("wrong-password");
+    await login.getByRole("button", { name: "Log in" }).click();
+    await expect(page.getByText("Wrong email or password.")).toBeVisible();
+  }
+
+  // The 6th attempt trips the per-email limiter before any password check.
+  const login = page.locator("form", { has: page.getByRole("button", { name: "Log in" }) });
+  await login.getByLabel("Email").fill(email);
+  await login.getByLabel("Password").fill("wrong-password");
+  await login.getByRole("button", { name: "Log in" }).click();
+  await expect(page.getByText(/Too many attempts/)).toBeVisible();
+});
+
 // One flow, one worker: signup → prefilled booking → history → logout → login.
 test("account lifecycle: signup, prefilled booking, history, logout, login", async ({ page }) => {
   const email = `account-e2e-${Date.now()}@example.com`;

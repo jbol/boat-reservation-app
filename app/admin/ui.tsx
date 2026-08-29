@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { adminLogin, adminLogout } from "@/lib/actions";
 
-export function LoginCard({ error }: { error?: boolean }) {
+export function LoginCard({ error }: { error?: string }) {
   return (
     <div className="mx-auto max-w-sm rounded-xl border border-slate-200 bg-white p-6">
       <h1 className="text-xl font-bold">Admin</h1>
@@ -10,7 +10,7 @@ export function LoginCard({ error }: { error?: boolean }) {
       </p>
       {error && (
         <p className="mt-3 rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-700">
-          Wrong password.
+          {error === "rl" ? "Too many attempts — wait about 15 minutes." : "Wrong password."}
         </p>
       )}
       <form action={adminLogin} className="mt-4 space-y-3">

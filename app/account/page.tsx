@@ -95,8 +95,10 @@ export default async function AccountPage({
   const errorMsg =
     error === "login"
       ? d.errLogin
-      : error === "exists"
-        ? d.errExists
+      : error === "ratelimited"
+        ? d.errRateLimited
+        : error === "exists"
+          ? d.errExists
         : error === "password"
           ? d.errPassword
           : error === "signup"
@@ -188,6 +190,13 @@ export default async function AccountPage({
           >
             {d.signupBtn}
           </button>
+          <p className="text-xs text-slate-500">
+            {d.byAccepting}{" "}
+            <Link href="/privacidad" className="text-sky-700 hover:underline">
+              {d.privacyPolicyLinkText}
+            </Link>
+            .
+          </p>
         </form>
       </div>
     </div>

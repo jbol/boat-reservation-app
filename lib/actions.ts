@@ -16,6 +16,18 @@ import {
 } from "./customerAuth";
 import { getLocale } from "./i18n";
 import { madridTodayKey, isDateKey } from "./format";
+import { headers } from "next/headers";
+import {
+  ADMIN_IP_LIMIT,
+  FIND_IP_LIMIT,
+  LOGIN_EMAIL_LIMIT,
+  LOGIN_IP_LIMIT,
+  SIGNUP_IP_LIMIT,
+  WINDOW_15_MIN,
+  WINDOW_30_MIN,
+  isRateLimited,
+  recordFailure,
+} from "./rateLimit";
 import { applyTimetables, isValidTime } from "./timetables";
 import { randomUUID } from "node:crypto";
 import { clampCount, estimateCents } from "./pricing";
@@ -28,6 +40,16 @@ import {
 
 function count(formData: FormData, name: string): number {
   return clampCount(formData.get(name));
+}
+
+/** Best-effort client IP for rate limiting (first hop of x-forwarded-for). */
+async function clientIp(): Promise<string> {
+  const h = await headers();
+  return (
+    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    h.get("x-real-ip") ||
+    "unknown"
+  );
 }
 
 async function findOrCreateCustomer(
@@ -132,8 +154,15 @@ export async function cancelReservation(formData: FormData) {
 // ---------------------------------------------------------------------------
 
 export async function adminLogin(formData: FormData) {
+  const ip = await clientIp();
+  if (isRateLimited(`admin:${ip}`, ADMIN_IP_LIMIT, WINDOW_15_MIN)) {
+    redirect("/admin?error=rl");
+  }
   const password = String(formData.get("password") ?? "");
-  if (!passwordMatches(password)) redirect("/admin?error=1");
+  if (!passwordMatches(password)) {
+    recordFailure(`admin:${ip}`);
+    redirect("/admin?error=1");
+  }
 
   (await cookies()).set(ADMIN_COOKIE, sessionToken(), {
     httpOnly: true,
@@ -231,7 +260,13 @@ export async function adminCreateReservation(formData: FormData) {
 export async function requestReservationLinks(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
 
-  if (email.includes("@")) {
+  // Rate-limited silently (same redirect either way) — this endpoint sends
+  // email, and revealing the limit would leak information.
+  const ip = await clientIp();
+  const limited = isRateLimited(`find:${ip}`, FIND_IP_LIMIT, WINDOW_15_MIN);
+  if (!limited) recordFailure(`find:${ip}`);
+
+  if (!limited && email.includes("@")) {
     const reservations = await prisma.reservation.findMany({
       where: {
         customer: { email },
@@ -310,6 +345,10 @@ async function setCustomerCookie(customerId: string) {
 }
 
 export async function customerSignup(formData: FormData) {
+  const ip = await clientIp();
+  if (isRateLimited(`signup:${ip}`, SIGNUP_IP_LIMIT, WINDOW_30_MIN)) {
+    redirect("/account?error=ratelimited");
+  }
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
@@ -318,7 +357,10 @@ export async function customerSignup(formData: FormData) {
   if (password.length < MIN_PASSWORD_LENGTH) redirect("/account?error=password");
 
   const existing = await prisma.customer.findFirst({ where: { email } });
-  if (existing?.passwordHash) redirect("/account?error=exists");
+  if (existing?.passwordHash) {
+    recordFailure(`signup:${ip}`);
+    redirect("/account?error=exists");
+  }
 
   // Signing up with a guest's email claims that customer row, so their past
   // reservations appear in the new account.
@@ -338,11 +380,21 @@ export async function customerSignup(formData: FormData) {
 export async function customerLogin(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
+  const ip = await clientIp();
+
+  if (
+    isRateLimited(`login:ip:${ip}`, LOGIN_IP_LIMIT, WINDOW_15_MIN) ||
+    isRateLimited(`login:email:${email}`, LOGIN_EMAIL_LIMIT, WINDOW_15_MIN)
+  ) {
+    redirect("/account?error=ratelimited");
+  }
 
   const customer = email.includes("@")
     ? await prisma.customer.findFirst({ where: { email } })
     : null;
   if (!customer?.passwordHash || !verifyPassword(password, customer.passwordHash)) {
+    recordFailure(`login:ip:${ip}`);
+    recordFailure(`login:email:${email}`);
     redirect("/account?error=login");
   }
 

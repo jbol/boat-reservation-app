@@ -69,7 +69,13 @@ export default async function RootLayout({
         <footer className="border-t border-slate-200 bg-white">
           <div className="mx-auto max-w-3xl px-4 py-4 text-xs text-slate-500">
             <p>{d.scheduleDisclaimer}</p>
-            <p className="mt-2">
+            <p className="mt-2 flex gap-3">
+              <Link href="/privacidad" className="hover:text-slate-700">
+                {d.navPrivacy}
+              </Link>
+              <Link href="/terminos" className="hover:text-slate-700">
+                {d.navTerms}
+              </Link>
               <Link href="/admin" className="hover:text-slate-700">
                 Admin
               </Link>
