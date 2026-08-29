@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { FareType, Operator, Port, Route, Sailing } from "@prisma/client";
 import type { Dict, Locale } from "@/lib/i18n";
-import { euros } from "@/lib/format";
+import { euros, isScheduleStale } from "@/lib/format";
 
 export type SailingWithRoute = Sailing & {
   route: Route & { operator: Operator; originPort: Port; fares: FareType[] };
@@ -148,6 +148,22 @@ export function BoatCardsGrid({
                 </div>
               )}
             </div>
+
+            {card.operator.scheduleCheckedAt && (
+              <p
+                className={`w-fit rounded-md px-2 py-0.5 text-[11px] font-medium ${
+                  isScheduleStale(card.operator.scheduleCheckedAt)
+                    ? "bg-amber-50 text-amber-800"
+                    : "bg-emerald-50 text-emerald-700"
+                }`}
+              >
+                ✓ {d.updatedOn}{" "}
+                {card.operator.scheduleCheckedAt.toLocaleDateString(
+                  locale === "es" ? "es-ES" : "en-GB",
+                  { day: "numeric", month: "long" },
+                )}
+              </p>
+            )}
 
             {!returnsOnly && card.out.length > 0 && (
               <div>
