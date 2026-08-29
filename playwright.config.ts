@@ -22,7 +22,12 @@ export default defineConfig({
     baseURL,
     trace: "on-first-retry",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
+    // Same engine (no extra browser install in CI), real mobile viewport,
+    // touch, and UA — the full suite runs on both layouts.
+    { name: "mobile", use: { ...devices["Pixel 7"] } },
+  ],
   webServer: {
     command: process.env.E2E_WEBSERVER_CMD ?? "npm run start",
     url: baseURL,

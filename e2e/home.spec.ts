@@ -58,6 +58,15 @@ test("boat cards show out and return times; time chips open booking", async ({ p
   await expect(page.getByRole("heading", { name: "Book your trip" })).toBeVisible();
 });
 
+test("page never scrolls horizontally (mobile layout guard)", async ({ page }) => {
+  await page.goto(`/?date=${SEED_DATE}`);
+  const overflow = await page.evaluate(() => {
+    const el = document.scrollingElement!;
+    return el.scrollWidth - el.clientWidth;
+  });
+  expect(overflow).toBeLessThanOrEqual(1);
+});
+
 test("Tabarca option shows return boats, informational only", async ({ page }) => {
   await page.goto(`/?date=${SEED_DATE}`);
   await page.getByLabel("From").selectOption("tabarca");
