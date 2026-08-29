@@ -40,6 +40,11 @@ test("boat cards show out and return times; time chips open booking", async ({ p
   await page.goto(`/?date=${SEED_DATE}`);
 
   // Leaf sections only — the page also wraps the whole sailings area in a <section>.
+  // Pinned card order: Transtabarca, Kontiki, then Marítimas Torrevieja.
+  const cardHeadings = page.locator("section:not(:has(section)) h3");
+  await expect(cardHeadings.nth(0)).toHaveText("Transtabarca");
+  await expect(cardHeadings.nth(1)).toHaveText("Cruceros Kontiki");
+
   const kontikiCard = page
     .locator("section:not(:has(section))")
     .filter({ has: page.getByRole("heading", { name: "Cruceros Kontiki" }) });

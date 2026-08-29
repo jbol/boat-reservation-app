@@ -32,9 +32,18 @@ export function buildBoatCards(sailings: SailingWithRoute[]): BoatCard[] {
       card.route ??= s.route;
     }
   }
-  // Order cards by their first outbound departure of the day.
-  return [...byOperator.values()].sort((a, b) =>
-    (a.out[0]?.departureTime ?? "99").localeCompare(b.out[0]?.departureTime ?? "99"),
+  // Fixed display order (user preference): Transtabarca and Kontiki on the
+  // first row, Marítimas Torrevieja below; any future operator sorts after,
+  // by its first departure of the day.
+  const CARD_ORDER = ["transtabarca", "kontiki", "maritimas-torrevieja"];
+  const rank = (card: BoatCard) => {
+    const i = CARD_ORDER.indexOf(card.operator.slug);
+    return i === -1 ? CARD_ORDER.length : i;
+  };
+  return [...byOperator.values()].sort(
+    (a, b) =>
+      rank(a) - rank(b) ||
+      (a.out[0]?.departureTime ?? "99").localeCompare(b.out[0]?.departureTime ?? "99"),
   );
 }
 
