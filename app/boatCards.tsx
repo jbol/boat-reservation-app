@@ -188,7 +188,25 @@ export function BoatCardsGrid({
               </div>
             )}
 
-            <p className="mt-auto text-[11px] text-slate-400">
+            {card.back.length > 0 &&
+              (() => {
+                const last = card.back[card.back.length - 1];
+                const gone = isToday && last.departureTime <= nowTime;
+                return (
+                  <p
+                    className={`mt-auto rounded-lg border px-2.5 py-1.5 text-xs font-semibold ${
+                      gone
+                        ? "border-red-200 bg-red-50 text-red-700"
+                        : "border-sky-200 bg-sky-50 text-sky-900"
+                    }`}
+                  >
+                    ⏱ {d.lastBoatBack}:{" "}
+                    <strong className="tabular-nums">{last.departureTime}</strong>
+                    {gone ? ` — ${d.departed}` : ""}
+                  </p>
+                );
+              })()}
+            <p className="text-[11px] text-slate-400">
               {returnsOnly ? d.returnIncluded : d.chooseTime}
             </p>
           </section>

@@ -51,6 +51,7 @@ test("boat cards show out and return times; time chips open booking", async ({ p
   await expect(kontikiCard.getByText("Out", { exact: true })).toBeVisible();
   await expect(kontikiCard.getByText("Return", { exact: true })).toBeVisible();
   await expect(kontikiCard.getByText(/Schedules updated/)).toBeVisible();
+  await expect(kontikiCard.getByText(/Last boat from Tabarca/)).toBeVisible();
 
   // Outbound chips are the booking entry point; return chips are not links.
   await kontikiCard.getByRole("link", { name: "09:45" }).click();
