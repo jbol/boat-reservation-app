@@ -21,7 +21,7 @@ test("language toggle switches ES/EN", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /Every boat to Tabarca/i })).toBeVisible();
 
-  await page.getByRole("link", { name: "ES" }).click();
+  await page.getByRole("link", { name: "ES", exact: true }).click();
   await expect(page.getByRole("heading", { name: /Todos los barcos a la Isla de Tabarca/i })).toBeVisible();
 });
 
@@ -56,6 +56,17 @@ test("boat cards show out and return times; time chips open booking", async ({ p
   // Outbound chips are the booking entry point; return chips are not links.
   await kontikiCard.getByRole("link", { name: "09:45" }).click();
   await expect(page.getByRole("heading", { name: "Book your trip" })).toBeVisible();
+});
+
+test("September shows all five operators, Santa Pola boats first", async ({ page }) => {
+  await page.goto("/?date=2026-09-05");
+  const cardHeadings = page.locator("section:not(:has(section)) h3");
+  await expect(cardHeadings).toHaveCount(5);
+  await expect(cardHeadings.nth(0)).toHaveText("Transtabarca");
+  await expect(cardHeadings.nth(1)).toHaveText("Tabarkeras");
+  await expect(cardHeadings.nth(2)).toHaveText("Viajes Isla Tabarca");
+  await expect(cardHeadings.nth(3)).toHaveText("Cruceros Kontiki");
+  await expect(cardHeadings.nth(4)).toHaveText("Marítimas Torrevieja");
 });
 
 test("page never scrolls horizontally (mobile layout guard)", async ({ page }) => {

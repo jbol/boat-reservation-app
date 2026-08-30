@@ -32,10 +32,16 @@ export function buildBoatCards(sailings: SailingWithRoute[]): BoatCard[] {
       card.route ??= s.route;
     }
   }
-  // Fixed display order (user preference): Transtabarca and Kontiki on the
-  // first row, Marítimas Torrevieja below; any future operator sorts after,
-  // by its first departure of the day.
-  const CARD_ORDER = ["transtabarca", "kontiki", "maritimas-torrevieja"];
+  // Fixed display order (user preference: Santa Pola boats first): the three
+  // Santa Pola operators, then Kontiki (Alicante), then Marítimas
+  // (Torrevieja); any future operator sorts after, by first departure.
+  const CARD_ORDER = [
+    "transtabarca",
+    "tabarkeras",
+    "viajes-isla-tabarca",
+    "kontiki",
+    "maritimas-torrevieja",
+  ];
   const rank = (card: BoatCard) => {
     const i = CARD_ORDER.indexOf(card.operator.slug);
     return i === -1 ? CARD_ORDER.length : i;

@@ -18,7 +18,10 @@ import { applyTimetables } from "../lib/timetables";
 const prisma = new PrismaClient();
 
 const SEASON_START = "2026-07-04";
-const SEASON_END = "2026-09-30";
+// Materialization horizon. Viajes Isla Tabarca publishes service to 31 Oct;
+// the other operators' timetables end explicitly on SUMMER_END below.
+const SEASON_END = "2026-10-31";
+const SUMMER_END = "2026-09-30";
 
 async function main() {
   // ---- Ports -------------------------------------------------------------
@@ -166,6 +169,9 @@ async function main() {
 
 
   // ---- Tabarkeras (Santa Pola) — known operator, timetable not yet verified --
+  // Verified 2026-08-30. One owner, many domains: tabarkeras.com is the main
+  // site of an alias farm (tabarqueras.com, ferryatabarca.com, …, all the
+  // same NIF) — the "orange boats" at Muelle de Ribera. See PLAN.md §2.
   const tabarkeras = {
     id: "op-tabarkeras",
     slug: "tabarkeras",
@@ -173,17 +179,182 @@ async function main() {
     homeUrl: "https://tabarkeras.com/",
     bookingUrl: "https://tabarkeras.com/event/ticket-tabarkeras/",
     blurbEs:
-      "Más de 50 años navegando entre Santa Pola y Tabarca. Hasta 16 salidas diarias (9:00–19:00) en temporada; ticket abierto, compra hoy y úsalo cualquier día.",
+      "Los barcos naranjas de Santa Pola: más de 50 años en la ruta, catamaranes con visión submarina y lancha rápida (~15 min). Ticket abierto sin hora asignada — vuelve en cualquier barco. Mascotas gratis.",
     blurbEn:
-      "Over 50 years sailing between Santa Pola and Tabarca. Up to 16 daily departures (9:00–19:00) in season; open ticket — buy today, use it any day.",
+      "Santa Pola's orange boats: 50+ years on the route, underwater-vision catamarans plus a fast boat (~15 min). Open ticket with no assigned time — take any boat back. Pets travel free.",
     tier: "deeplink",
-    scheduleVerified: false,
+    scheduleVerified: true,
+    scheduleCheckedAt: new Date("2026-08-30"),
   };
   await prisma.operator.upsert({
     where: { id: tabarkeras.id },
     update: tabarkeras,
     create: tabarkeras,
   });
+
+  const tabarkerasRoute = {
+    id: "route-tabarkeras-santa-pola",
+    operatorId: tabarkeras.id,
+    originPortId: "port-santa-pola",
+    durationMin: 25,
+    durationNoteEs: "15 min lancha rápida · 25 min catamarán",
+    durationNoteEn: "15 min fast boat · 25 min catamaran",
+    openReturn: true,
+    returnNoteEs:
+      "Ticket abierto sin hora asignada — vuelve en cualquier barco (si uno se llena, el siguiente). En septiembre aplica el horario mínimo de servicio publicado por la naviera.",
+    returnNoteEn:
+      "Open ticket with no assigned time — take any boat back (next one if full). In September the operator's published minimum-service timetable applies.",
+  };
+  await prisma.route.upsert({
+    where: { id: tabarkerasRoute.id },
+    update: tabarkerasRoute,
+    create: tabarkerasRoute,
+  });
+
+  const tabarkerasReturnRoute = {
+    id: "route-tabarkeras-return",
+    operatorId: tabarkeras.id,
+    originPortId: "port-tabarca",
+    destinationEs: "Santa Pola",
+    destinationEn: "Santa Pola",
+    durationMin: 25,
+    durationNoteEs: "15 min lancha rápida · 25 min catamarán",
+    durationNoteEn: "15 min fast boat · 25 min catamaran",
+    openReturn: true,
+    returnNoteEs: "Vuelta incluida en el ticket abierto de Tabarkeras.",
+    returnNoteEn: "Return included in Tabarkeras' open ticket.",
+  };
+  await prisma.route.upsert({
+    where: { id: tabarkerasReturnRoute.id },
+    update: tabarkerasReturnRoute,
+    create: tabarkerasReturnRoute,
+  });
+
+  const tabarkerasFares = [
+    {
+      id: "fare-tabarkeras-adult",
+      routeId: tabarkerasRoute.id,
+      code: "adult",
+      labelEs: "Adulto (ida y vuelta)",
+      labelEn: "Adult (round trip)",
+      priceCents: 900,
+      noteEs: "Packs de grupo en su web (2/5/8/10 adultos)",
+      noteEn: "Group packs on their site (2/5/8/10 adults)",
+    },
+    {
+      id: "fare-tabarkeras-child",
+      routeId: tabarkerasRoute.id,
+      code: "child",
+      labelEs: "Niños 5–9 años",
+      labelEn: "Children 5–9",
+      priceCents: 800,
+    },
+    {
+      id: "fare-tabarkeras-infant",
+      routeId: tabarkerasRoute.id,
+      code: "infant",
+      labelEs: "Menores de 5 años",
+      labelEn: "Under 5",
+      priceCents: 0,
+      noteEs: "Gratis (mascotas también)",
+      noteEn: "Free (pets too)",
+    },
+  ];
+  for (const f of tabarkerasFares) {
+    await prisma.fareType.upsert({ where: { id: f.id }, update: f, create: f });
+  }
+
+  // ---- Viajes Isla Tabarca (Santa Pola) — verified 2026-08-30 --------------
+  // Transportes Marítimos Nueva Tabarca S.L. — third genuine operator,
+  // glass-bottom catamaran "Nueva Tabarca"; publishes explicit validity:
+  // daily service 2 March – 31 October.
+  const viajesIsla = {
+    id: "op-viajes-isla-tabarca",
+    slug: "viajes-isla-tabarca",
+    name: "Viajes Isla Tabarca",
+    homeUrl: "https://viajesislatabarca.com/",
+    bookingUrl: "https://app.viajesislatabarca.com/",
+    blurbEs:
+      "Catamarán con visión submarina «Nueva Tabarca» desde Santa Pola — pioneros en la ruta desde 1972. Ticket flexible sin hora fija de vuelta, válido toda la temporada (hasta el 31 de octubre).",
+    blurbEn:
+      "Underwater-vision catamaran “Nueva Tabarca” from Santa Pola — pioneers on the route since 1972. Flexible ticket with no fixed return time, valid all season (through 31 October).",
+    tier: "deeplink",
+    scheduleVerified: true,
+    scheduleCheckedAt: new Date("2026-08-30"),
+  };
+  await prisma.operator.upsert({ where: { id: viajesIsla.id }, update: viajesIsla, create: viajesIsla });
+
+  const viajesIslaRoute = {
+    id: "route-viajes-isla-santa-pola",
+    operatorId: viajesIsla.id,
+    originPortId: "port-santa-pola",
+    durationMin: 25,
+    durationNoteEs: "aprox.",
+    durationNoteEn: "approx.",
+    openReturn: true,
+    returnNoteEs:
+      "Ticket sin hora fija de vuelta — regresa en cualquier barco de la naviera. Precio online 9 € (12 € en taquilla).",
+    returnNoteEn:
+      "Ticket with no fixed return time — take any of the operator's boats back. Online price €9 (€12 at the ticket office).",
+  };
+  await prisma.route.upsert({
+    where: { id: viajesIslaRoute.id },
+    update: viajesIslaRoute,
+    create: viajesIslaRoute,
+  });
+
+  const viajesIslaReturnRoute = {
+    id: "route-viajes-isla-return",
+    operatorId: viajesIsla.id,
+    originPortId: "port-tabarca",
+    destinationEs: "Santa Pola",
+    destinationEn: "Santa Pola",
+    durationMin: 25,
+    durationNoteEs: "aprox.",
+    durationNoteEn: "approx.",
+    openReturn: true,
+    returnNoteEs: "Vuelta incluida en el ticket flexible de Viajes Isla Tabarca.",
+    returnNoteEn: "Return included in Viajes Isla Tabarca's flexible ticket.",
+  };
+  await prisma.route.upsert({
+    where: { id: viajesIslaReturnRoute.id },
+    update: viajesIslaReturnRoute,
+    create: viajesIslaReturnRoute,
+  });
+
+  const viajesIslaFares = [
+    {
+      id: "fare-viajes-isla-adult",
+      routeId: viajesIslaRoute.id,
+      code: "adult",
+      labelEs: "Adulto (ida y vuelta)",
+      labelEn: "Adult (round trip)",
+      priceCents: 900,
+      noteEs: "Precio online (12 € en taquilla)",
+      noteEn: "Online price (€12 at the ticket office)",
+    },
+    {
+      id: "fare-viajes-isla-child",
+      routeId: viajesIslaRoute.id,
+      code: "child",
+      labelEs: "Niños 4–8 años",
+      labelEn: "Children 4–8",
+      priceCents: 800,
+    },
+    {
+      id: "fare-viajes-isla-infant",
+      routeId: viajesIslaRoute.id,
+      code: "infant",
+      labelEs: "Menores de 4 años",
+      labelEn: "Under 4",
+      priceCents: 0,
+      noteEs: "Gratis (mascotas también)",
+      noteEn: "Free (pets too)",
+    },
+  ];
+  for (const f of viajesIslaFares) {
+    await prisma.fareType.upsert({ where: { id: f.id }, update: f, create: f });
+  }
 
   // ---- Marítimas Torrevieja (Torrevieja) — verified 2026-07-21 -------------
   // Day trip with FIXED returns (openReturn: false), unlike the other routes.
@@ -315,22 +486,36 @@ async function main() {
   const AUG_TO = "2026-08-31";
   const timetables = [
     // Kontiki outbound: one daily pattern since the 2026-08-17 re-verification
-    { id: "tt-kontiki-main", routeId: "route-kontiki-alicante", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1111111", times: ["09:45", "10:45", "12:15", "13:15"] },
+    { id: "tt-kontiki-main", routeId: "route-kontiki-alicante", validFrom: SEASON_START, validTo: SUMMER_END, daysMask: "1111111", times: ["09:45", "10:45", "12:15", "13:15"] },
     // Transtabarca outbound: daily base + weekend fast-boat extras (limited seats)
-    { id: "tt-trans-base", routeId: "route-transtabarca-santa-pola", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1111111", times: ["09:00", "10:00", "10:45", "11:30", "12:30", "13:00", "14:00", "15:30", "16:30", "17:30", "18:15", "18:45", "19:45"] },
-    { id: "tt-trans-weekend", routeId: "route-transtabarca-santa-pola", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1000001", times: ["08:30", "09:30", "10:30", "11:00", "12:00", "12:30", "13:30", "14:45"] },
+    { id: "tt-trans-base", routeId: "route-transtabarca-santa-pola", validFrom: SEASON_START, validTo: SUMMER_END, daysMask: "1111111", times: ["09:00", "10:00", "10:45", "11:30", "12:30", "13:00", "14:00", "15:30", "16:30", "17:30", "18:15", "18:45", "19:45"] },
+    { id: "tt-trans-weekend", routeId: "route-transtabarca-santa-pola", validFrom: SEASON_START, validTo: SUMMER_END, daysMask: "1000001", times: ["08:30", "09:30", "10:30", "11:00", "12:00", "12:30", "13:30", "14:45"] },
     // Marítimas Torrevieja outbound: Jul & Sep daily 10:45 · Aug Mon–Sat 2 rotations, Sun 10:45
     { id: "tt-mt-jul", routeId: "route-maritimas-torrevieja", validFrom: SEASON_START, validTo: "2026-07-31", daysMask: "1111111", times: ["10:45"] },
-    { id: "tt-mt-sep", routeId: "route-maritimas-torrevieja", validFrom: "2026-09-01", validTo: SEASON_END, daysMask: "1111111", times: ["10:45"] },
+    { id: "tt-mt-sep", routeId: "route-maritimas-torrevieja", validFrom: "2026-09-01", validTo: SUMMER_END, daysMask: "1111111", times: ["10:45"] },
     { id: "tt-mt-aug-mosat", routeId: "route-maritimas-torrevieja", validFrom: AUG_FROM, validTo: AUG_TO, daysMask: "0111111", times: ["09:30", "12:15"] },
     { id: "tt-mt-aug-sun", routeId: "route-maritimas-torrevieja", validFrom: AUG_FROM, validTo: AUG_TO, daysMask: "1000000", times: ["10:45"] },
     // Returns from Tabarca
-    { id: "tt-kontiki-ret-main", routeId: "route-kontiki-return", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1111111", times: ["16:00", "18:15"] },
-    { id: "tt-trans-ret", routeId: "route-transtabarca-return", validFrom: SEASON_START, validTo: SEASON_END, daysMask: "1111111", times: ["10:30", "11:15", "12:10", "12:45", "13:45", "14:50", "16:15", "17:10", "18:10", "19:00", "19:30", "20:30"] },
+    { id: "tt-kontiki-ret-main", routeId: "route-kontiki-return", validFrom: SEASON_START, validTo: SUMMER_END, daysMask: "1111111", times: ["16:00", "18:15"] },
+    { id: "tt-trans-ret", routeId: "route-transtabarca-return", validFrom: SEASON_START, validTo: SUMMER_END, daysMask: "1111111", times: ["10:30", "11:15", "12:10", "12:45", "13:45", "14:50", "16:15", "17:10", "18:10", "19:00", "19:30", "20:30"] },
     { id: "tt-mt-ret-jul", routeId: "route-maritimas-return", validFrom: SEASON_START, validTo: "2026-07-31", daysMask: "1111111", times: ["18:30"] },
-    { id: "tt-mt-ret-sep", routeId: "route-maritimas-return", validFrom: "2026-09-01", validTo: SEASON_END, daysMask: "1111111", times: ["18:30"] },
+    { id: "tt-mt-ret-sep", routeId: "route-maritimas-return", validFrom: "2026-09-01", validTo: SUMMER_END, daysMask: "1111111", times: ["18:30"] },
     { id: "tt-mt-ret-aug-mosat", routeId: "route-maritimas-return", validFrom: AUG_FROM, validTo: AUG_TO, daysMask: "0111111", times: ["17:30", "20:15"] },
     { id: "tt-mt-ret-aug-sun", routeId: "route-maritimas-return", validFrom: AUG_FROM, validTo: AUG_TO, daysMask: "1000000", times: ["19:00"] },
+    // Tabarkeras (verified 2026-08-30): main 19-departure grid for the rest of
+    // high season; from September, their published "horario mínimo de
+    // servicio" (guaranteed minimum — a September reduction is corroborated
+    // independently by their resellers' season tables).
+    { id: "tt-tabarkeras-main", routeId: "route-tabarkeras-santa-pola", validFrom: "2026-08-30", validTo: AUG_TO, daysMask: "1111111", times: ["08:30", "09:00", "09:30", "10:00", "10:30", "10:45", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:45", "15:15", "15:30", "16:15", "17:00", "18:00", "19:00"] },
+    { id: "tt-tabarkeras-sep", routeId: "route-tabarkeras-santa-pola", validFrom: "2026-09-01", validTo: SUMMER_END, daysMask: "1111111", times: ["10:00", "10:45", "11:25", "12:00", "12:30", "13:00", "14:00", "15:30", "16:15", "17:00", "17:45"] },
+    { id: "tt-tabarkeras-ret-main", routeId: "route-tabarkeras-return", validFrom: "2026-08-30", validTo: AUG_TO, daysMask: "1111111", times: ["10:00", "10:40", "11:25", "12:15", "12:45", "13:45", "14:45", "15:30", "16:15", "17:00", "17:45", "18:45", "19:45", "20:45"] },
+    { id: "tt-tabarkeras-ret-sep", routeId: "route-tabarkeras-return", validFrom: "2026-09-01", validTo: SUMMER_END, daysMask: "1111111", times: ["10:30", "11:20", "12:15", "12:45", "13:15", "13:45", "14:45", "16:15", "17:00", "17:45", "18:30", "19:15"] },
+    // Viajes Isla Tabarca (verified 2026-08-30): July–August expanded grid
+    // from their ticket app for the remaining summer days; from September,
+    // their base 2026 table (published validity: daily through 31 October).
+    { id: "tt-viajes-isla-aug", routeId: "route-viajes-isla-santa-pola", validFrom: "2026-08-30", validTo: AUG_TO, daysMask: "1111111", times: ["08:30", "09:00", "09:30", "10:00", "10:45", "11:30", "12:00", "12:30", "13:00", "14:00", "15:30", "16:15", "17:00", "18:00", "19:00"] },
+    { id: "tt-viajes-isla-base", routeId: "route-viajes-isla-santa-pola", validFrom: "2026-09-01", validTo: SEASON_END, daysMask: "1111111", times: ["10:00", "10:45", "11:30", "12:00", "12:30", "13:00", "14:00", "15:30", "17:00", "18:30"] },
+    { id: "tt-viajes-isla-ret", routeId: "route-viajes-isla-return", validFrom: "2026-08-30", validTo: SEASON_END, daysMask: "1111111", times: ["10:30", "11:30", "12:15", "13:00", "13:45", "14:45", "16:15", "17:45", "19:15"] },
   ];
   // Patterns retired by the 2026-08-17 re-verification (Kontiki unified daily).
   await prisma.timetable.deleteMany({

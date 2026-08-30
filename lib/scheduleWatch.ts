@@ -24,6 +24,16 @@ export const WATCH_SOURCES: { id: string; operatorId: string; url: string }[] = 
     operatorId: "op-maritimas-torrevieja",
     url: "https://maritimastorrevieja.es/precios-y-horarios/",
   },
+  {
+    id: "tabarkeras-horarios",
+    operatorId: "op-tabarkeras",
+    url: "https://tabarkeras.com/horarios-y-tarifas-tabarca-santa-pola/",
+  },
+  {
+    id: "viajes-isla-home",
+    operatorId: "op-viajes-isla-tabarca",
+    url: "https://viajesislatabarca.com/",
+  },
 ];
 
 /** Visible text of an HTML document, scripts/styles stripped. */
