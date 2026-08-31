@@ -214,11 +214,13 @@ export default async function Home({
                     </p>
                   </div>
                   {isReturn ? (
-                    <p className="max-w-[180px] text-right text-xs text-slate-500">
+                    <p className="w-full text-right text-xs text-slate-500 sm:w-auto sm:max-w-[180px]">
                       {d.returnIncluded}
                     </p>
                   ) : (
-                    <div className="flex items-center gap-4">
+                    // Mobile: price + button on their own right-aligned row so
+                    // the description keeps full width; inline again on ≥sm.
+                    <div className="flex w-full items-center justify-end gap-4 sm:w-auto">
                       {adultFare && (
                         <div className="text-right">
                           <p className="text-xl font-bold text-slate-900">

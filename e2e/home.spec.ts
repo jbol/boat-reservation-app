@@ -76,6 +76,14 @@ test("page never scrolls horizontally (mobile layout guard)", async ({ page }) =
     return el.scrollWidth - el.clientWidth;
   });
   expect(overflow).toBeLessThanOrEqual(1);
+
+  // List-row descriptions must keep a readable column — guards against the
+  // price/button group squeezing the text into one-word-per-line wrapping.
+  const descWidth = await page
+    .locator("main li p.text-sm")
+    .first()
+    .evaluate((el) => el.getBoundingClientRect().width);
+  expect(descWidth).toBeGreaterThan(180);
 });
 
 test("Tabarca option shows return boats, informational only", async ({ page }) => {
