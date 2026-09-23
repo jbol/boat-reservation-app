@@ -83,6 +83,36 @@ describe("formatDateKeyShort", () => {
   });
 });
 
+describe("dateKeyDiffDays", () => {
+  it("counts forward, backward, and across DST changes", async () => {
+    const { dateKeyDiffDays } = await import("./format");
+    expect(dateKeyDiffDays("2026-09-01", "2026-09-30")).toBe(29);
+    expect(dateKeyDiffDays("2026-09-30", "2026-09-01")).toBe(-29);
+    expect(dateKeyDiffDays("2026-07-20", "2026-07-20")).toBe(0);
+    // Spain leaves DST on 2026-10-25 — day math must not drift.
+    expect(dateKeyDiffDays("2026-10-24", "2026-10-26")).toBe(2);
+  });
+});
+
+describe("horizonStatus", () => {
+  it("flags missing or exhausted data as past", async () => {
+    const { horizonStatus } = await import("./format");
+    expect(horizonStatus(null, "2026-09-01")).toBe("past");
+    expect(horizonStatus(undefined, "2026-09-01")).toBe("past");
+    expect(horizonStatus("2026-08-31", "2026-09-01")).toBe("past");
+  });
+
+  it("warns inside the window, ok outside, with exact boundaries", async () => {
+    const { horizonStatus, HORIZON_WARN_DAYS } = await import("./format");
+    expect(HORIZON_WARN_DAYS).toBe(21);
+    // Horizon = today still counts as data present, but nearly gone.
+    expect(horizonStatus("2026-09-01", "2026-09-01")).toBe("near");
+    expect(horizonStatus("2026-09-22", "2026-09-01")).toBe("near"); // 21 days: inclusive
+    expect(horizonStatus("2026-09-23", "2026-09-01")).toBe("ok"); // 22 days
+    expect(horizonStatus("2026-10-31", "2026-09-01")).toBe("ok");
+  });
+});
+
 describe("madridTodayKey", () => {
   it("returns a valid date key", () => {
     expect(isDateKey(madridTodayKey())).toBe(true);

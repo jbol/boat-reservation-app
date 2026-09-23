@@ -50,6 +50,27 @@ export function formatDateKeyShort(dateKey: string, locale: Locale): string {
 
 export const SCHEDULE_STALE_DAYS = 14;
 
+/** Whole days from `fromKey` to `toKey` (negative when toKey is earlier). */
+export function dateKeyDiffDays(fromKey: string, toKey: string): number {
+  const ms = Date.parse(`${toKey}T12:00:00Z`) - Date.parse(`${fromKey}T12:00:00Z`);
+  return Math.round(ms / 86_400_000);
+}
+
+export const HORIZON_WARN_DAYS = 21;
+
+export type HorizonStatus = "ok" | "near" | "past";
+
+/** How close `todayKey` is to the last date with loaded schedule data.
+ *  "past" = no data for today onward, "near" = HORIZON_WARN_DAYS or fewer
+ *  days of data left (today counts as day 0). */
+export function horizonStatus(
+  dataUntil: string | null | undefined,
+  todayKey: string,
+): HorizonStatus {
+  if (!dataUntil || dataUntil < todayKey) return "past";
+  return dateKeyDiffDays(todayKey, dataUntil) <= HORIZON_WARN_DAYS ? "near" : "ok";
+}
+
 /** True when a schedule verification is missing or older than the threshold. */
 export function isScheduleStale(checkedAt: Date | null | undefined): boolean {
   if (!checkedAt) return true;

@@ -1,15 +1,13 @@
 import { test, expect } from "@playwright/test";
 import { shiftDateKey } from "../lib/format";
-import { loginAdmin, useEnglish } from "./helpers";
+import { DATA_END, SUMMER_END, loginAdmin, useEnglish } from "./helpers";
 
-const SEASON_END = "2026-09-30";
-
-/** First strictly-future Friday inside the seeded season, or null. */
+/** First strictly-future Friday inside Kontiki's seeded (summer) pattern, or null. */
 function nextSeasonFriday(): string | null {
   const todayKey = new Date().toISOString().slice(0, 10);
   for (let i = 1; i <= 8; i++) {
     const key = shiftDateKey(todayKey, i);
-    if (key > SEASON_END) return null;
+    if (key > SUMMER_END) return null;
     if (new Date(`${key}T12:00:00Z`).getUTCDay() === 5) return key;
   }
   return null;
@@ -33,6 +31,20 @@ test("operator name on home links to its schedule page", async ({ page }) => {
   await page.goto("/?date=2026-07-27");
   await page.getByRole("link", { name: "Transtabarca" }).first().click();
   await expect(page.getByRole("heading", { name: "Transtabarca schedules" })).toBeVisible();
+});
+
+test("admin timetables shows per-operator data horizons", async ({ page }) => {
+  await loginAdmin(page);
+  await page.goto("/admin/timetables");
+  const operatorSection = (name: string) =>
+    page
+      .locator("section:not(:has(section))")
+      .filter({ has: page.getByRole("heading", { name, exact: true }) });
+  // Each chip belongs to its own operator: Kontiki's data ends with the
+  // summer, Viajes Isla Tabarca's base grid runs to the season end.
+  await expect(operatorSection("Cruceros Kontiki").getByText(`data until ${SUMMER_END}`)).toBeVisible();
+  await expect(operatorSection("Viajes Isla Tabarca").getByText(`data until ${DATA_END}`)).toBeVisible();
+  await expect(page.getByText(`data until ${SUMMER_END}`)).toHaveCount(4);
 });
 
 test("edit pattern → apply → sailing appears on home → revert", async ({ page }) => {

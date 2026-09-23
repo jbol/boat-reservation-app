@@ -45,6 +45,11 @@ export const dictionaries = {
       "Posible mala mar — con mal tiempo las navieras pueden cancelar o cambiar salidas. Consulta los avisos de tu naviera antes de viajar.",
     sailingsFor: "Salidas del",
     noSailings: "No hay salidas registradas para este día.",
+    notYetPublished: "Aún no tenemos los horarios para esta fecha",
+    notYetPublishedHint:
+      "Las navieras suelen publicar los horarios de la nueva temporada unas semanas antes. Consulta su web oficial o vuelve más adelante.",
+    noSailingsFuture:
+      "Aún no tenemos los horarios de las navieras para esta fecha. Suelen publicarlos unas semanas antes — vuelve a consultarlos más cerca del día o revisa sus webs oficiales.",
     fromPort: "desde",
     approxDuration: "trayecto",
     openReturn: "Vuelta abierta",
@@ -165,6 +170,11 @@ export const dictionaries = {
       "Rough sea possible — in bad weather operators may cancel or change sailings. Check your operator's notices before travelling.",
     sailingsFor: "Departures on",
     noSailings: "No departures on record for this day.",
+    notYetPublished: "We don't have this date's schedule yet",
+    notYetPublishedHint:
+      "Operators usually publish the new season's schedules a few weeks ahead. Check their official website or come back later.",
+    noSailingsFuture:
+      "We don't have the operators' schedules for this date yet. They usually publish them a few weeks ahead — check back closer to the day or see their official websites.",
     fromPort: "from",
     approxDuration: "crossing",
     openReturn: "Open return",

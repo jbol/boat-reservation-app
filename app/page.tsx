@@ -13,6 +13,7 @@ import {
   shiftDateKey,
 } from "@/lib/format";
 import { BoatCardsGrid, buildBoatCards } from "./boatCards";
+import { operatorDataHorizons } from "@/lib/horizon";
 
 export default async function Home({
   searchParams,
@@ -32,7 +33,7 @@ export default async function Home({
   const from =
     typeof sp.from === "string" && ports.some((p) => p.slug === sp.from) ? sp.from : "";
 
-  const [allSailings, unverifiedOperators, verifiedAgg] = await Promise.all([
+  const [allSailings, unverifiedOperators, verifiedOperators, horizons] = await Promise.all([
     prisma.sailing.findMany({
       where: { dateKey, status: "SCHEDULED" },
       include: {
@@ -41,10 +42,15 @@ export default async function Home({
       orderBy: { departureTime: "asc" },
     }),
     prisma.operator.findMany({ where: { scheduleVerified: false } }),
-    prisma.operator.aggregate({
+    prisma.operator.findMany({
       where: { scheduleVerified: true },
-      _min: { scheduleCheckedAt: true },
+      include: {
+        routes: {
+          select: { originPort: { select: { slug: true, nameEs: true, nameEn: true } } },
+        },
+      },
     }),
+    operatorDataHorizons(prisma),
   ]);
 
   // Boat-first view: one card per operator with that day's out + return times.
@@ -63,8 +69,42 @@ export default async function Home({
   const nowTime = madridNowTime();
   const isToday = dateKey === today;
 
+  // Operators relevant to the current filter (all of them in returns mode —
+  // every boat's last return matters when you're standing on the island).
+  const relevantOperators = verifiedOperators.filter(
+    (o) =>
+      returnsOnly ||
+      !from ||
+      o.routes.some((r) => r.originPort.slug !== "tabarca" && r.originPort.slug === from),
+  );
+  // Past an operator's data horizon, absence of sailings means "schedule not
+  // published yet", not "no boats that day" — show an honest placeholder.
+  const shownOperatorIds = new Set(cards.map((c) => c.operator.id));
+  const placeholders = relevantOperators
+    .filter((o) => !shownOperatorIds.has(o.id) && dateKey > (horizons.get(o.id) ?? ""))
+    .map((o) => ({
+      operator: o,
+      fromPorts: [
+        ...new Set(
+          o.routes
+            .map((r) => r.originPort)
+            .filter((p) => p.slug !== "tabarca")
+            .map((p) => (locale === "es" ? p.nameEs : p.nameEn)),
+        ),
+      ],
+    }));
+  const pastAllHorizons =
+    relevantOperators.length > 0 &&
+    relevantOperators.every((o) => dateKey > (horizons.get(o.id) ?? ""));
+
   const dateHref = (key: string) => `/?date=${key}${from ? `&from=${from}` : ""}`;
-  const oldestCheck = verifiedAgg._min.scheduleCheckedAt;
+  const checkDates = verifiedOperators
+    .map((o) => o.scheduleCheckedAt)
+    .filter((c): c is Date => c !== null);
+  const oldestCheck =
+    checkDates.length > 0
+      ? checkDates.reduce((a, b) => (a.getTime() <= b.getTime() ? a : b))
+      : null;
   const checksAreStale = isScheduleStale(oldestCheck);
 
   return (
@@ -150,10 +190,11 @@ export default async function Home({
           </p>
         )}
 
-        {cards.length > 0 && (
+        {cards.length + placeholders.length > 0 && (
           <div className="mb-6">
             <BoatCardsGrid
               cards={cards}
+              placeholders={placeholders}
               locale={locale}
               d={d}
               returnsOnly={returnsOnly}
@@ -169,7 +210,7 @@ export default async function Home({
 
         {sailings.length === 0 ? (
           <p className="rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
-            {d.noSailings}
+            {pastAllHorizons ? d.noSailingsFuture : d.noSailings}
           </p>
         ) : (
           <ul className="space-y-3">

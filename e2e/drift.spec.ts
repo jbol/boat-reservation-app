@@ -12,5 +12,11 @@ test("public drift-status endpoint returns sync state", async ({ page }) => {
     expect(op).toHaveProperty("name");
     expect(op).toHaveProperty("slug");
     expect(op).toHaveProperty("lastVerifiedAt");
+    // Data horizon: last dateKey with materialized sailings.
+    expect(op.dataUntil).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   }
+  // Top-level dataUntil = the earliest horizon (the next season cliff).
+  expect(body.dataUntil).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  const horizons = body.operators.map((o: { dataUntil: string }) => o.dataUntil).sort();
+  expect(body.dataUntil).toBe(horizons[0]);
 });

@@ -15,6 +15,22 @@ export type BoatCard = {
   back: SailingWithRoute[];
 };
 
+// Fixed display order (user preference: Santa Pola boats first): the three
+// Santa Pola operators, then Kontiki (Alicante), then Marítimas
+// (Torrevieja); any future operator sorts after, by first departure.
+const CARD_ORDER = [
+  "transtabarca",
+  "tabarkeras",
+  "viajes-isla-tabarca",
+  "kontiki",
+  "maritimas-torrevieja",
+];
+
+function operatorRank(slug: string): number {
+  const i = CARD_ORDER.indexOf(slug);
+  return i === -1 ? CARD_ORDER.length : i;
+}
+
 /** Group a day's sailings (both directions) into one card per operator/boat. */
 export function buildBoatCards(sailings: SailingWithRoute[]): BoatCard[] {
   const byOperator = new Map<string, BoatCard>();
@@ -32,23 +48,9 @@ export function buildBoatCards(sailings: SailingWithRoute[]): BoatCard[] {
       card.route ??= s.route;
     }
   }
-  // Fixed display order (user preference: Santa Pola boats first): the three
-  // Santa Pola operators, then Kontiki (Alicante), then Marítimas
-  // (Torrevieja); any future operator sorts after, by first departure.
-  const CARD_ORDER = [
-    "transtabarca",
-    "tabarkeras",
-    "viajes-isla-tabarca",
-    "kontiki",
-    "maritimas-torrevieja",
-  ];
-  const rank = (card: BoatCard) => {
-    const i = CARD_ORDER.indexOf(card.operator.slug);
-    return i === -1 ? CARD_ORDER.length : i;
-  };
   return [...byOperator.values()].sort(
     (a, b) =>
-      rank(a) - rank(b) ||
+      operatorRank(a.operator.slug) - operatorRank(b.operator.slug) ||
       (a.out[0]?.departureTime ?? "99").localeCompare(b.out[0]?.departureTime ?? "99"),
   );
 }
@@ -97,8 +99,50 @@ function TimeChips({
   );
 }
 
+/** A verified operator with no loaded data for the selected date. */
+export type SchedulePlaceholder = {
+  operator: Operator;
+  /** Localized mainland origin port names (empty for return-only operators). */
+  fromPorts: string[];
+};
+
+/** Muted card for a verified operator whose schedule isn't loaded for the
+ *  selected date — an honest "not yet" instead of silently missing. */
+function NotYetPublishedCard({
+  placeholder: { operator, fromPorts },
+  d,
+}: {
+  placeholder: SchedulePlaceholder;
+  d: Dict;
+}) {
+  return (
+    <section className="flex flex-col gap-2 rounded-xl border border-dashed border-slate-300 bg-white p-4">
+      <div>
+        <h3 className="font-bold text-slate-700">
+          <Link
+            href={`/horarios/${operator.slug}`}
+            prefetch={false}
+            className="hover:text-sky-800 hover:underline"
+            title={d.seeSchedule}
+          >
+            {operator.name}
+          </Link>
+        </h3>
+        {fromPorts.length > 0 && (
+          <p className="text-xs text-slate-500">
+            {d.fromPort} {fromPorts.join(" · ")}
+          </p>
+        )}
+      </div>
+      <p className="text-sm font-medium text-slate-600">📅 {d.notYetPublished}</p>
+      <p className="text-xs text-slate-400">{d.notYetPublishedHint}</p>
+    </section>
+  );
+}
+
 export function BoatCardsGrid({
   cards,
+  placeholders = [],
   locale,
   d,
   returnsOnly,
@@ -106,6 +150,8 @@ export function BoatCardsGrid({
   isToday,
 }: {
   cards: BoatCard[];
+  /** Verified operators with no data for the date because it's past their horizon. */
+  placeholders?: SchedulePlaceholder[];
   locale: Locale;
   d: Dict;
   /** "Desde: Isla de Tabarca" mode — emphasize returns, nothing bookable. */
@@ -113,9 +159,35 @@ export function BoatCardsGrid({
   nowTime: string;
   isToday: boolean;
 }) {
+  // Bookable cards first (in pinned order), then placeholders (same order) —
+  // a "not yet" notice must never push the only real boat below the fold.
+  const entries: (
+    | { kind: "card"; card: BoatCard }
+    | { kind: "placeholder"; placeholder: SchedulePlaceholder }
+  )[] = [
+    ...cards.map((card) => ({ kind: "card" as const, card })),
+    ...placeholders.map((placeholder) => ({ kind: "placeholder" as const, placeholder })),
+  ].sort((a, b) => {
+    const slugOf = (e: typeof a) =>
+      e.kind === "card" ? e.card.operator.slug : e.placeholder.operator.slug;
+    return (
+      Number(a.kind === "placeholder") - Number(b.kind === "placeholder") ||
+      operatorRank(slugOf(a)) - operatorRank(slugOf(b))
+    );
+  });
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {cards.map((card) => {
+      {entries.map((entry) => {
+        if (entry.kind === "placeholder") {
+          return (
+            <NotYetPublishedCard
+              key={entry.placeholder.operator.id}
+              placeholder={entry.placeholder}
+              d={d}
+            />
+          );
+        }
+        const card = entry.card;
         const route = card.route;
         const adultFare = route?.fares.find((f) => f.code === "adult");
         const portName = route

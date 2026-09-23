@@ -1,5 +1,14 @@
-import { test, expect } from "@playwright/test";
-import { SEED_DATE, useEnglish } from "./helpers";
+import { test, expect, type Page } from "@playwright/test";
+import { shiftDateKey } from "../lib/format";
+import { DATA_END, SEED_DATE, SUMMER_END, useEnglish } from "./helpers";
+
+/** Page must never scroll horizontally (the reason for the Pixel 7 project). */
+async function horizontalOverflow(page: Page) {
+  return page.evaluate(() => {
+    const el = document.scrollingElement!;
+    return el.scrollWidth - el.clientWidth;
+  });
+}
 
 test.beforeEach(async ({ page }) => {
   await useEnglish(page);
@@ -69,13 +78,53 @@ test("September shows all five operators, Santa Pola boats first", async ({ page
   await expect(cardHeadings.nth(4)).toHaveText("Marítimas Torrevieja");
 });
 
+test("date past every horizon: honest empty state, no phantom 'no boats'", async ({ page }) => {
+  // Well beyond the seeded data — every verified operator gets a "we don't
+  // have it yet" placeholder in pinned order.
+  await page.goto(`/?date=${shiftDateKey(DATA_END, 45)}`);
+  const cardHeadings = page.locator("section:not(:has(section)) h3");
+  await expect(cardHeadings).toHaveCount(5);
+  await expect(cardHeadings.nth(0)).toHaveText("Transtabarca");
+  await expect(cardHeadings.nth(4)).toHaveText("Marítimas Torrevieja");
+  await expect(page.getByText("We don't have this date's schedule yet")).toHaveCount(5);
+  await expect(page.getByText(/don't have the operators' schedules for this date/)).toBeVisible();
+  // Nothing bookable, and no misleading "no departures on record".
+  await expect(page.locator('a[href^="/book/"]')).toHaveCount(0);
+  await expect(page.getByText("No departures on record")).toHaveCount(0);
+  expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
+});
+
+test("date past some horizons: bookable cards first, then placeholders", async ({ page }) => {
+  // October: only Viajes Isla Tabarca's data reaches this far; the other four
+  // operators' data ends with the summer.
+  await page.goto(`/?date=${shiftDateKey(SUMMER_END, 10)}`);
+  const cardHeadings = page.locator("section:not(:has(section)) h3");
+  await expect(cardHeadings).toHaveCount(5);
+  await expect(cardHeadings.nth(0)).toHaveText("Viajes Isla Tabarca");
+  await expect(cardHeadings.nth(1)).toHaveText("Transtabarca");
+  await expect(cardHeadings.nth(2)).toHaveText("Tabarkeras");
+  await expect(cardHeadings.nth(3)).toHaveText("Cruceros Kontiki");
+  await expect(cardHeadings.nth(4)).toHaveText("Marítimas Torrevieja");
+
+  const viajesCard = page
+    .locator("section:not(:has(section))")
+    .filter({ has: page.getByRole("heading", { name: "Viajes Isla Tabarca" }) });
+  await expect(viajesCard.getByText("Out", { exact: true })).toBeVisible();
+
+  const transtabarcaCard = page
+    .locator("section:not(:has(section))")
+    .filter({ has: page.getByRole("heading", { name: "Transtabarca" }) });
+  await expect(transtabarcaCard.getByText("We don't have this date's schedule yet")).toBeVisible();
+  // Placeholders still say where the boat leaves from.
+  await expect(transtabarcaCard.getByText("from Santa Pola")).toBeVisible();
+  // The by-time list still has Viajes Isla departures — no global empty state.
+  await expect(page.getByText(/don't have the operators' schedules/)).toHaveCount(0);
+  expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
+});
+
 test("page never scrolls horizontally (mobile layout guard)", async ({ page }) => {
   await page.goto(`/?date=${SEED_DATE}`);
-  const overflow = await page.evaluate(() => {
-    const el = document.scrollingElement!;
-    return el.scrollWidth - el.clientWidth;
-  });
-  expect(overflow).toBeLessThanOrEqual(1);
+  expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
 
   // List-row descriptions must keep a readable column — guards against the
   // price/button group squeezing the text into one-word-per-line wrapping.

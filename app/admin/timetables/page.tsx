@@ -9,6 +9,8 @@ import {
 } from "@/lib/actions";
 import { timesOf } from "@/lib/timetables";
 import { driftFlags } from "@/lib/scheduleWatch";
+import { horizonWarnings, operatorDataHorizons } from "@/lib/horizon";
+import { dateKeyDiffDays, horizonStatus, madridTodayKey } from "@/lib/format";
 import { AdminNav, LoginCard } from "../ui";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -59,7 +61,7 @@ export default async function AdminTimetablesPage({
   const sp = await searchParams;
   if (!(await isAdmin())) return <LoginCard />;
 
-  const [operators, drift] = await Promise.all([
+  const [operators, drift, horizons] = await Promise.all([
     prisma.operator.findMany({
       where: { scheduleVerified: true },
       orderBy: { name: "asc" },
@@ -70,8 +72,15 @@ export default async function AdminTimetablesPage({
       },
     }),
     driftFlags(),
+    operatorDataHorizons(prisma),
   ]);
   const operatorName = new Map(operators.map((o) => [o.id, o.name]));
+
+  // Data horizon per operator: last date with materialized sailings. Warn
+  // before the site starts showing "not yet published" to customers.
+  const todayKey = madridTodayKey();
+  const warnings = horizonWarnings(operators, horizons, todayKey);
+  const anyExhausted = warnings.some((h) => h.status === "past");
 
   // Per-company tabs — schedule changes arrive one operator at a time.
   const tab =
@@ -103,6 +112,42 @@ export default async function AdminTimetablesPage({
         created, vanished ones with bookings are cancelled (optionally emailing customers),
         empty ones are removed. Weather cancellations are never resurrected.
       </p>
+
+      {warnings.length > 0 && (
+        <div
+          className={`mb-4 rounded-lg border p-3 text-sm ${
+            anyExhausted
+              ? "border-red-300 bg-red-50 text-red-900"
+              : "border-amber-300 bg-amber-50 text-amber-900"
+          }`}
+        >
+          <p className="font-semibold">
+            {anyExhausted
+              ? "⛔ Schedule data exhausted for some operators:"
+              : "⏳ Schedule data running out:"}
+          </p>
+          <ul className="mt-1 list-disc pl-5">
+            {warnings.map((h) => (
+              <li key={h.operator.id}>
+                {h.operator.name} —{" "}
+                {h.dataUntil === null || h.status === "past" ? (
+                  <>
+                    no sailings data from today onward
+                    {h.dataUntil ? ` (last data: ${h.dataUntil})` : ""} — customers see
+                    &ldquo;schedule not yet published&rdquo;.
+                  </>
+                ) : (
+                  <>
+                    data ends <strong>{h.dataUntil}</strong> (
+                    {dateKeyDiffDays(todayKey, h.dataUntil)} days). Verify the operator&rsquo;s
+                    next-season schedule, extend the patterns, then Apply.
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {drift.length > 0 && (
         <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
@@ -156,6 +201,17 @@ export default async function AdminTimetablesPage({
                   <span>
                     verified:{" "}
                     {op.scheduleCheckedAt ? op.scheduleCheckedAt.toISOString().slice(0, 10) : "never"}
+                  </span>
+                  <span
+                    className={`rounded px-1.5 py-0.5 font-medium ${
+                      horizonStatus(horizons.get(op.id) ?? null, todayKey) === "ok"
+                        ? "bg-emerald-50 text-emerald-700"
+                        : horizonStatus(horizons.get(op.id) ?? null, todayKey) === "near"
+                          ? "bg-amber-50 text-amber-800"
+                          : "bg-red-50 text-red-700"
+                    }`}
+                  >
+                    data until {horizons.get(op.id) ?? "—"}
                   </span>
                   <input type="hidden" name="operatorId" value={op.id} />
                   <button type="submit" className="rounded border border-slate-300 px-2 py-1 font-semibold hover:bg-slate-100">
