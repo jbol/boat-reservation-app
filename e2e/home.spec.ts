@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { shiftDateKey } from "../lib/format";
-import { DATA_END, SEED_DATE, SUMMER_END, useEnglish } from "./helpers";
+import { DATA_END, OCT_END, SEED_DATE, useEnglish } from "./helpers";
 
 /** Page must never scroll horizontally (the reason for the Pixel 7 project). */
 async function horizontalOverflow(page: Page) {
@@ -95,21 +95,21 @@ test("date past every horizon: honest empty state, no phantom 'no boats'", async
 });
 
 test("date past some horizons: bookable cards first, then placeholders", async ({ page }) => {
-  // October: only Viajes Isla Tabarca's data reaches this far; the other four
-  // operators' data ends with the summer.
-  await page.goto(`/?date=${shiftDateKey(SUMMER_END, 10)}`);
+  // Tuesday 10 Nov: only Marítimas Torrevieja's data reaches this far (Tue/Thu/
+  // Sat day trips until 21 Nov); the other four operators' seasons end 31 Oct.
+  await page.goto(`/?date=${shiftDateKey(OCT_END, 10)}`);
   const cardHeadings = page.locator("section:not(:has(section)) h3");
   await expect(cardHeadings).toHaveCount(5);
-  await expect(cardHeadings.nth(0)).toHaveText("Viajes Isla Tabarca");
+  await expect(cardHeadings.nth(0)).toHaveText("Marítimas Torrevieja");
   await expect(cardHeadings.nth(1)).toHaveText("Transtabarca");
   await expect(cardHeadings.nth(2)).toHaveText("Tabarkeras");
-  await expect(cardHeadings.nth(3)).toHaveText("Cruceros Kontiki");
-  await expect(cardHeadings.nth(4)).toHaveText("Marítimas Torrevieja");
+  await expect(cardHeadings.nth(3)).toHaveText("Viajes Isla Tabarca");
+  await expect(cardHeadings.nth(4)).toHaveText("Cruceros Kontiki");
 
-  const viajesCard = page
+  const maritimasCard = page
     .locator("section:not(:has(section))")
-    .filter({ has: page.getByRole("heading", { name: "Viajes Isla Tabarca" }) });
-  await expect(viajesCard.getByText("Out", { exact: true })).toBeVisible();
+    .filter({ has: page.getByRole("heading", { name: "Marítimas Torrevieja" }) });
+  await expect(maritimasCard.getByText("Out", { exact: true })).toBeVisible();
 
   const transtabarcaCard = page
     .locator("section:not(:has(section))")
@@ -117,7 +117,7 @@ test("date past some horizons: bookable cards first, then placeholders", async (
   await expect(transtabarcaCard.getByText("We don't have this date's schedule yet")).toBeVisible();
   // Placeholders still say where the boat leaves from.
   await expect(transtabarcaCard.getByText("from Santa Pola")).toBeVisible();
-  // The by-time list still has Viajes Isla departures — no global empty state.
+  // The by-time list still has the Marítimas departure — no global empty state.
   await expect(page.getByText(/don't have the operators' schedules/)).toHaveCount(0);
   expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
 });

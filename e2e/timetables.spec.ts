@@ -1,14 +1,16 @@
 import { test, expect } from "@playwright/test";
 import { shiftDateKey } from "../lib/format";
-import { DATA_END, SUMMER_END, loginAdmin, useEnglish } from "./helpers";
+import { DATA_END, OCT_END, SUMMER_END, loginAdmin, useEnglish } from "./helpers";
 
-/** First strictly-future Friday inside Kontiki's seeded (summer) pattern, or null. */
-function nextSeasonFriday(): string | null {
+/** First strictly-future Friday within Kontiki's seeded patterns, with the
+ *  pattern row that covers it (weekday grid to 30 Sep, October daily row). */
+function nextKontikiFriday(): { friday: string; rowId: string } | null {
   const todayKey = new Date().toISOString().slice(0, 10);
   for (let i = 1; i <= 8; i++) {
     const key = shiftDateKey(todayKey, i);
-    if (key > SUMMER_END) return null;
-    if (new Date(`${key}T12:00:00Z`).getUTCDay() === 5) return key;
+    if (key > OCT_END) return null;
+    if (new Date(`${key}T12:00:00Z`).getUTCDay() !== 5) continue;
+    return { friday: key, rowId: key <= SUMMER_END ? "tt-kontiki-wk" : "tt-kontiki-oct" };
   }
   return null;
 }
@@ -21,8 +23,11 @@ test("public schedule page shows patterns and verified chip", async ({ page }) =
   await page.goto("/horarios/kontiki");
   await expect(page.getByRole("heading", { name: "Cruceros Kontiki schedules" })).toBeVisible();
   await expect(page.getByText("Schedules verified on")).toBeVisible();
-  // Outbound pattern row (daily, per the 2026-08-17 re-verification).
-  await expect(page.getByText("09:45 · 10:45 · 12:15 · 13:15")).toBeVisible();
+  // Outbound pattern rows after the 2026-09-23 re-verification: the retired
+  // daily grid (kept as history) and the weekend grid share the same four
+  // times; weekdays lost 13:15; October is a single daily 10:45.
+  await expect(page.getByText("09:45 · 10:45 · 12:15 · 13:15", { exact: true })).toHaveCount(2);
+  await expect(page.getByText("09:45 · 10:45 · 12:15", { exact: true })).toBeVisible();
   // Return route section is on the same page (EN port names — locale is pinned).
   await expect(page.getByText("Tabarca Island → Alicante")).toBeVisible();
 });
@@ -40,24 +45,26 @@ test("admin timetables shows per-operator data horizons", async ({ page }) => {
     page
       .locator("section:not(:has(section))")
       .filter({ has: page.getByRole("heading", { name, exact: true }) });
-  // Each chip belongs to its own operator: Kontiki's data ends with the
-  // summer, Viajes Isla Tabarca's base grid runs to the season end.
-  await expect(operatorSection("Cruceros Kontiki").getByText(`data until ${SUMMER_END}`)).toBeVisible();
-  await expect(operatorSection("Viajes Isla Tabarca").getByText(`data until ${DATA_END}`)).toBeVisible();
-  await expect(page.getByText(`data until ${SUMMER_END}`)).toHaveCount(4);
+  // Each chip belongs to its own operator: four seasons end 31 Oct, Marítimas
+  // Torrevieja's November day trips run to the global horizon.
+  await expect(operatorSection("Cruceros Kontiki").getByText(`data until ${OCT_END}`)).toBeVisible();
+  await expect(operatorSection("Marítimas Torrevieja").getByText(`data until ${DATA_END}`)).toBeVisible();
+  await expect(page.getByText(`data until ${OCT_END}`)).toHaveCount(4);
 });
 
 test("edit pattern → apply → sailing appears on home → revert", async ({ page }) => {
-  const friday = nextSeasonFriday();
-  test.skip(!friday, "no future Friday left inside the seeded season");
+  const next = nextKontikiFriday();
+  test.skip(!next, "no future Friday left inside Kontiki's seeded patterns");
+  const { friday, rowId } = next!;
 
   await loginAdmin(page);
   await page.goto("/admin/timetables");
 
-  // The save-form for Kontiki's daily pattern (has the id input AND a Save button).
+  // The save-form for the Kontiki pattern covering that Friday (has the id
+  // input AND a Save button).
   const friForm = page
     .locator("form")
-    .filter({ has: page.locator('input[name="id"][value="tt-kontiki-main"]') })
+    .filter({ has: page.locator(`input[name="id"][value="${rowId}"]`) })
     .filter({ has: page.getByRole("button", { name: "Save" }) });
   const timesInput = friForm.getByLabel(/Departure times/);
   // Self-healing: strip our own test artifact in case a previous run failed
