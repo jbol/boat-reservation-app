@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { getDict } from "@/lib/i18n";
 import { TabarcaWeatherWidget, WeatherSkeleton } from "./weather";
 import {
-  euros,
   formatDateKey,
   isDateKey,
   isScheduleStale,
@@ -57,14 +56,6 @@ export default async function Home({
   const returnsOnly = from === "tabarca";
   const cards = buildBoatCards(allSailings).filter(
     (c) => returnsOnly || !from || c.route?.originPort.slug === from,
-  );
-  // Secondary by-time list: default = boats TO Tabarca; "Isla de Tabarca" in
-  // the From selector switches it to the return crossings instead.
-  const sailings = allSailings.filter((s) =>
-    returnsOnly
-      ? s.route.originPort.slug === "tabarca"
-      : s.route.originPort.slug !== "tabarca" &&
-        (!from || s.route.originPort.slug === from),
   );
   const nowTime = madridNowTime();
   const isToday = dateKey === today;
@@ -191,98 +182,20 @@ export default async function Home({
         )}
 
         {cards.length + placeholders.length > 0 && (
-          <div className="mb-6">
-            <BoatCardsGrid
-              cards={cards}
-              placeholders={placeholders}
-              locale={locale}
-              d={d}
-              returnsOnly={returnsOnly}
-              nowTime={nowTime}
-              isToday={isToday}
-            />
-          </div>
+          <BoatCardsGrid
+            cards={cards}
+            placeholders={placeholders}
+            locale={locale}
+            d={d}
+            returnsOnly={returnsOnly}
+            nowTime={nowTime}
+            isToday={isToday}
+          />
         )}
-
-        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
-          {d.byTimeHeading}
-        </h3>
-
-        {sailings.length === 0 ? (
-          <p className="rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
+        {cards.length === 0 && (
+          <p className="mt-4 rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
             {pastAllHorizons ? d.noSailingsFuture : d.noSailings}
           </p>
-        ) : (
-          <ul className="space-y-3">
-            {sailings.map((s) => {
-              const route = s.route;
-              const isReturn = route.originPort.slug === "tabarca";
-              const adultFare = route.fares.find((f) => f.code === "adult");
-              const portName = locale === "es" ? route.originPort.nameEs : route.originPort.nameEn;
-              const destination = locale === "es" ? route.destinationEs : route.destinationEn;
-              const durationNote =
-                locale === "es" ? route.durationNoteEs : route.durationNoteEn;
-              return (
-                <li
-                  key={s.id}
-                  className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-slate-200 bg-white p-4"
-                >
-                  <div className="w-16 text-2xl font-bold tabular-nums text-slate-900">
-                    {s.departureTime}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-slate-900">
-                      <Link
-                        href={`/horarios/${route.operator.slug}`}
-                        prefetch={false}
-                        className="hover:text-sky-800 hover:underline"
-                        title={d.seeSchedule}
-                      >
-                        {route.operator.name}
-                      </Link>
-                    </p>
-                    <p className="text-sm text-slate-600">
-                      {isReturn ? (
-                        <>→ {destination}</>
-                      ) : (
-                        <>
-                          {d.fromPort} {portName}
-                        </>
-                      )}{" "}
-                      · {d.approxDuration} {route.durationMin} min
-                      {durationNote ? ` (${durationNote})` : ""} ·{" "}
-                      {route.openReturn ? d.openReturn : d.dayTrip}
-                    </p>
-                  </div>
-                  {isReturn ? (
-                    <p className="w-full text-right text-xs text-slate-500 sm:w-auto sm:max-w-[180px]">
-                      {d.returnIncluded}
-                    </p>
-                  ) : (
-                    // Mobile: price + button on their own right-aligned row so
-                    // the description keeps full width; inline again on ≥sm.
-                    <div className="flex w-full items-center justify-end gap-4 sm:w-auto">
-                      {adultFare && (
-                        <div className="text-right">
-                          <p className="text-xl font-bold text-slate-900">
-                            {euros(adultFare.priceCents, locale)}
-                          </p>
-                          <p className="text-xs text-slate-500">{d.perAdult}</p>
-                        </div>
-                      )}
-                      <Link
-                        href={`/book/${s.id}`}
-                        prefetch={false}
-                        className="rounded-lg bg-sky-700 px-4 py-2 font-semibold text-white hover:bg-sky-800"
-                      >
-                        {d.book}
-                      </Link>
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
         )}
       </section>
 

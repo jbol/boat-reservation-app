@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { FareType, Operator, Port, Route, Sailing } from "@prisma/client";
-import type { Dict, Locale } from "@/lib/i18n";
+import { op, type Dict, type Locale } from "@/lib/i18n";
+import { adapterFor } from "@/lib/adapters";
+import { brandColor } from "@/lib/brand";
 import { euros, isScheduleStale } from "@/lib/format";
 
 export type SailingWithRoute = Sailing & {
@@ -116,7 +118,10 @@ function NotYetPublishedCard({
   d: Dict;
 }) {
   return (
-    <section className="flex flex-col gap-2 rounded-xl border border-dashed border-slate-300 bg-white p-4">
+    <section
+      className="flex flex-col gap-2 rounded-xl border-2 border-dashed bg-white p-4"
+      style={{ borderColor: brandColor(operator.slug) }}
+    >
       <div>
         <h3 className="font-bold text-slate-700">
           <Link
@@ -198,7 +203,8 @@ export function BoatCardsGrid({
         return (
           <section
             key={card.operator.id}
-            className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4"
+            className="flex flex-col gap-3 rounded-xl border-2 bg-white p-4"
+            style={{ borderColor: brandColor(card.operator.slug) }}
           >
             <div className="flex items-start justify-between gap-2">
               <div>
@@ -212,10 +218,17 @@ export function BoatCardsGrid({
                     {card.operator.name}
                   </Link>
                 </h3>
-                {route && (
+                {route && !returnsOnly && (
                   <p className="text-xs text-slate-500">
                     {d.fromPort} {portName} · {route.durationMin} min ·{" "}
                     {route.openReturn ? d.openReturn : d.dayTrip}
+                  </p>
+                )}
+                {/* Returns-only view (standing on the island): say where the boat goes. */}
+                {returnsOnly && card.back[0] && (
+                  <p className="text-xs text-slate-500">
+                    → {locale === "es" ? card.back[0].route.destinationEs : card.back[0].route.destinationEn}{" "}
+                    · {card.back[0].route.durationMin} min
                   </p>
                 )}
               </div>
@@ -286,6 +299,18 @@ export function BoatCardsGrid({
                   </p>
                 );
               })()}
+            {/* Quick buy: one click to the operator's own checkout. Saving a
+                trip here stays optional via the time chips. */}
+            {!returnsOnly && route && (
+              <a
+                href={adapterFor(card.operator).getHandoff(card.operator).url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-lg bg-sky-700 px-4 py-2.5 text-center font-semibold text-white hover:bg-sky-800"
+              >
+                {op(d.openSite, card.operator.name)} ↗
+              </a>
+            )}
             <p className="text-[11px] text-slate-400">
               {returnsOnly ? d.returnIncluded : d.chooseTime}
             </p>

@@ -62,9 +62,24 @@ test("boat cards show out and return times; time chips open booking", async ({ p
   await expect(kontikiCard.getByText(/Schedules updated/)).toBeVisible();
   await expect(kontikiCard.getByText(/Last boat from Tabarca/)).toBeVisible();
 
-  // Outbound chips are the booking entry point; return chips are not links.
+  // Outbound chips open the save-a-trip page; return chips are not links.
   await kontikiCard.getByRole("link", { name: "09:45" }).click();
-  await expect(page.getByRole("heading", { name: "Book your trip" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Buy your ticket" })).toBeVisible();
+});
+
+test("quick buy: cards and time rows link straight to the operator's checkout", async ({
+  page,
+}) => {
+  await page.goto(`/?date=${SEED_DATE}`);
+  // One "Buy on <operator>" button per boat card, opening the operator's own
+  // site in a new tab — no form in between.
+  const cardBuy = page.locator("section:not(:has(section))").getByRole("link", { name: /^Buy on / });
+  expect(await cardBuy.count()).toBeGreaterThanOrEqual(3);
+  await expect(cardBuy.first()).toHaveAttribute("target", "_blank");
+  await expect(cardBuy.first()).toHaveAttribute("rel", /noopener/);
+  await expect(cardBuy.first()).toHaveAttribute("href", /^https?:\/\//);
+  // The old by-time list is gone: the cards are the whole page.
+  await expect(page.getByRole("listitem")).toHaveCount(0);
 });
 
 test("September shows all five operators, Santa Pola boats first", async ({ page }) => {
@@ -122,17 +137,20 @@ test("date past some horizons: bookable cards first, then placeholders", async (
   expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
 });
 
+test("each boat card carries its operator's brand colour as an outline", async ({ page }) => {
+  await page.goto(`/?date=${SEED_DATE}`);
+  const outline = (name: string) =>
+    page
+      .locator("section:not(:has(section))")
+      .filter({ has: page.getByRole("heading", { name, exact: true }) })
+      .evaluate((el) => getComputedStyle(el).borderTopColor);
+  expect(await outline("Transtabarca")).toBe("rgb(17, 57, 95)"); // navy
+  expect(await outline("Cruceros Kontiki")).toBe("rgb(211, 47, 47)"); // the red boat
+});
+
 test("page never scrolls horizontally (mobile layout guard)", async ({ page }) => {
   await page.goto(`/?date=${SEED_DATE}`);
   expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
-
-  // List-row descriptions must keep a readable column — guards against the
-  // price/button group squeezing the text into one-word-per-line wrapping.
-  const descWidth = await page
-    .locator("main li p.text-sm")
-    .first()
-    .evaluate((el) => el.getBoundingClientRect().width);
-  expect(descWidth).toBeGreaterThan(180);
 });
 
 test("Tabarca option shows return boats, informational only", async ({ page }) => {
@@ -140,11 +158,13 @@ test("Tabarca option shows return boats, informational only", async ({ page }) =
   await page.getByLabel("From").selectOption("tabarca");
   await page.getByRole("button", { name: "Show boats" }).click();
 
-  // Return crossings to all three mainland ports are listed…
-  await expect(page.getByText("→ Santa Pola").first()).toBeVisible();
-  await expect(page.getByText("→ Alicante").first()).toBeVisible();
-  await expect(page.getByText("→ Torrevieja").first()).toBeVisible();
-  // …but they are not bookable: covered by the round-trip ticket.
+  // Every card says where its return boats go (all three mainland ports)…
+  await expect(page.getByText(/→ Santa Pola/).first()).toBeVisible();
+  await expect(page.getByText(/→ Alicante/).first()).toBeVisible();
+  await expect(page.getByText(/→ Torrevieja/).first()).toBeVisible();
+  // …but nothing is bookable or buyable from the island: the return is
+  // covered by the round-trip ticket.
   await expect(page.locator('a[href^="/book/"]')).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /^Buy on / })).toHaveCount(0);
   await expect(page.getByText("Included in your round-trip ticket").first()).toBeVisible();
 });

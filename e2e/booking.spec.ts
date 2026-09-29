@@ -9,12 +9,20 @@ test("book → hand-off intent → attach reference → confirmed", async ({ pag
   await page.goto(`/?date=${SEED_DATE}`);
   await page.locator('a[href^="/book/"]').first().click();
 
-  // Booking form
-  await expect(page.getByRole("heading", { name: "Book your trip" })).toBeVisible();
+  // Booking page: the primary action is one click to the operator's checkout.
+  await expect(page.getByRole("heading", { name: "Buy your ticket" })).toBeVisible();
+  const quickBuy = page.getByRole("link", { name: /^Buy on / });
+  await expect(quickBuy).toHaveAttribute("target", "_blank");
+  await expect(quickBuy).toHaveAttribute("rel", /noopener/);
+  await expect(quickBuy).toHaveAttribute("href", /^https?:\/\//);
+
+  // Saving the trip is optional and collapsed for guests.
+  await expect(page.getByLabel("Full name")).toBeHidden();
+  await page.getByText("Save this trip (optional)").click();
   await page.getByLabel("Full name").fill("E2E Tester");
   await page.getByLabel("Email").fill("e2e@example.com");
   await page.getByLabel(/Adult \(round trip\)/).fill("2");
-  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("button", { name: "Save trip" }).click();
 
   // Reservation page — intent state
   await expect(page).toHaveURL(/\/r\/.+/);

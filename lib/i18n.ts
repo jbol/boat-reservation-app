@@ -22,10 +22,15 @@ export const dictionaries = {
     returnIncluded: "Incluido en tu billete de ida y vuelta — sin reserva aparte",
     outboundLabel: "Ida",
     returnLabel: "Vuelta",
-    chooseTime: "Elige tu hora de ida para reservar",
+    chooseTime: "Pulsa una hora de ida para guardar el viaje",
+    saveTrip: "Guardar viaje",
+    saveTripTitle: "Guardar este viaje (opcional)",
+    saveTripHint:
+      "Te enviamos los horarios por email y podrás anotar la referencia de tu compra para tenerlo todo en un solo lugar.",
+    opensNewTab: "Pago en la web oficial de {op} — se abre en una pestaña nueva.",
+    fromPrice: "desde",
     updatedOn: "Horarios actualizados el",
     lastBoatBack: "Último barco desde Tabarca",
-    byTimeHeading: "Todas las salidas por hora",
     departed: "ya salió",
     scheduleHeading: "Horarios de {op}",
     seeSchedule: "Ver horarios",
@@ -53,14 +58,13 @@ export const dictionaries = {
     fromPort: "desde",
     approxDuration: "trayecto",
     openReturn: "Vuelta abierta",
-    book: "Reservar",
     perAdult: "adulto, ida y vuelta",
     moreOperators: "Más navieras",
     unverifiedNote:
       "Horarios aún no verificados en nuestra base de datos — consulta y reserva directamente en su web.",
     visitSite: "Ir a su web",
     // Booking page
-    bookTitle: "Reserva tu viaje",
+    bookTitle: "Compra tu billete",
     passengers: "Pasajeros",
     yourDetails: "Tus datos",
     nameLabel: "Nombre y apellidos",
@@ -69,7 +73,6 @@ export const dictionaries = {
     free: "Gratis",
     payNote:
       "El pago se hace en la web oficial de {op}. Aquí guardamos tu reserva para que puedas gestionarla en un solo lugar.",
-    continueBtn: "Continuar",
     returnHeading: "Barcos de vuelta",
     // Reservation page
     resTitle: "Tu reserva",
@@ -131,7 +134,7 @@ export const dictionaries = {
       "La naviera ha cancelado esta salida (habitualmente por el estado del mar). Si ya compraste billetes, contacta con la naviera para el cambio o reembolso según su política.",
     findAnotherBoat: "Buscar otra salida",
     scheduleDisclaimer:
-      "Los horarios y precios provienen de las webs oficiales de las navieras (julio 2026) y pueden cambiar sin previo aviso. Confírmalos siempre al comprar.",
+      "Los horarios y precios provienen de las webs oficiales de las navieras y pueden cambiar sin previo aviso. Confírmalos siempre al comprar.",
   },
   en: {
     appName: "Tabarca Boats",
@@ -147,10 +150,15 @@ export const dictionaries = {
     returnIncluded: "Included in your round-trip ticket — no separate booking",
     outboundLabel: "Out",
     returnLabel: "Return",
-    chooseTime: "Pick your outbound time to book",
+    chooseTime: "Tap an outbound time to save the trip",
+    saveTrip: "Save trip",
+    saveTripTitle: "Save this trip (optional)",
+    saveTripHint:
+      "We'll email you the times and you can note your purchase reference to keep everything in one place.",
+    opensNewTab: "Payment on {op}'s official website — opens in a new tab.",
+    fromPrice: "from",
     updatedOn: "Schedules updated",
     lastBoatBack: "Last boat from Tabarca",
-    byTimeHeading: "All departures by time",
     departed: "departed",
     scheduleHeading: "{op} schedules",
     seeSchedule: "See schedules",
@@ -178,14 +186,13 @@ export const dictionaries = {
     fromPort: "from",
     approxDuration: "crossing",
     openReturn: "Open return",
-    book: "Book",
     perAdult: "adult, round trip",
     moreOperators: "More operators",
     unverifiedNote:
       "Timetable not verified in our database yet — check and book directly on their site.",
     visitSite: "Visit their site",
     // Booking page
-    bookTitle: "Book your trip",
+    bookTitle: "Buy your ticket",
     passengers: "Passengers",
     yourDetails: "Your details",
     nameLabel: "Full name",
@@ -194,7 +201,6 @@ export const dictionaries = {
     free: "Free",
     payNote:
       "Payment happens on {op}'s official website. We keep your reservation here so you can manage everything in one place.",
-    continueBtn: "Continue",
     returnHeading: "Return boats",
     // Reservation page
     resTitle: "Your reservation",
@@ -253,7 +259,7 @@ export const dictionaries = {
       "The operator has cancelled this sailing (usually due to sea conditions). If you already bought tickets, contact the operator about rebooking or a refund under their policy.",
     findAnotherBoat: "Find another boat",
     scheduleDisclaimer:
-      "Schedules and prices come from the operators' official websites (July 2026) and can change without notice. Always confirm when buying.",
+      "Schedules and prices come from the operators' official websites and can change without notice. Always confirm when buying.",
   },
 };
 

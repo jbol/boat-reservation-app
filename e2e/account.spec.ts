@@ -44,7 +44,7 @@ test("account lifecycle: signup, prefilled booking, history, logout, login", asy
   await page.locator('a[href^="/book/"]').first().click();
   await expect(page.getByLabel("Full name")).toHaveValue("Account Tester");
   await expect(page.getByLabel("Email")).toHaveValue(email);
-  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("button", { name: "Save trip" }).click();
   await expect(page).toHaveURL(/\/r\/.+/);
   await expect(page.getByText("Pending purchase")).toBeVisible();
 

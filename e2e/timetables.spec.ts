@@ -30,6 +30,11 @@ test("public schedule page shows patterns and verified chip", async ({ page }) =
   await expect(page.getByText("09:45 · 10:45 · 12:15", { exact: true })).toBeVisible();
   // Return route section is on the same page (EN port names — locale is pinned).
   await expect(page.getByText("Tabarca Island → Alicante")).toBeVisible();
+  // Quick-buy CTA above the tables: price + one external link to the checkout.
+  await expect(page.getByText(/^from .*adult, round trip/)).toBeVisible();
+  const buy = page.getByRole("link", { name: /^Buy on Cruceros Kontiki/ });
+  await expect(buy).toHaveCount(1);
+  await expect(buy).toHaveAttribute("target", "_blank");
 });
 
 test("operator name on home links to its schedule page", async ({ page }) => {
@@ -85,8 +90,11 @@ test("edit pattern → apply → sailing appears on home → revert", async ({ p
   await expect(page.getByText(/Applied Cruceros Kontiki/)).toBeVisible();
 
   await page.goto(`/?date=${friday}&from=alicante`);
-  // Scoped to sailing cards — the weather strip also shows a "20:00" hour.
-  await expect(page.getByRole("listitem").filter({ hasText: "20:00" })).toHaveCount(1);
+  // Scoped to the Kontiki card — the weather strip also shows a "20:00" hour.
+  const kontikiCard = page
+    .locator("section:not(:has(section))")
+    .filter({ has: page.getByRole("heading", { name: "Cruceros Kontiki" }) });
+  await expect(kontikiCard.getByRole("link", { name: "20:00" })).toHaveCount(1);
 
   // Revert the pattern and apply again — the empty 20:00 sailings are removed.
   await page.goto("/admin/timetables");
@@ -98,5 +106,5 @@ test("edit pattern → apply → sailing appears on home → revert", async ({ p
   await expect(page.getByText(/Applied Cruceros Kontiki/)).toBeVisible();
 
   await page.goto(`/?date=${friday}&from=alicante`);
-  await expect(page.getByRole("listitem").filter({ hasText: "20:00" })).toHaveCount(0);
+  await expect(kontikiCard.getByRole("link", { name: "20:00" })).toHaveCount(0);
 });

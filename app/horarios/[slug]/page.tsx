@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getDict, op } from "@/lib/i18n";
+import { adapterFor } from "@/lib/adapters";
 import { timesOf } from "@/lib/timetables";
 import {
   euros,
@@ -41,6 +42,10 @@ export default async function SchedulePage({
         year: "numeric",
       })
     : "—";
+  const handoff = adapterFor(operator).getHandoff(operator);
+  const adultFare = operator.routes
+    .find((r) => r.originPort.slug !== "tabarca")
+    ?.fares.find((f) => f.code === "adult");
 
   return (
     <div className="space-y-6">
@@ -66,6 +71,27 @@ export default async function SchedulePage({
           {d.officialSite} ↗
         </a>
       </div>
+
+      {/* Quick buy: price + one click to the operator's checkout, above the tables. */}
+      <section className="flex flex-wrap items-center gap-4 rounded-xl border border-sky-200 bg-sky-50 p-4">
+        <div className="min-w-[12rem] flex-1">
+          {adultFare && (
+            <p className="text-xl font-bold text-slate-900">
+              {d.fromPrice} {euros(adultFare.priceCents, locale)}{" "}
+              <span className="text-sm font-normal text-slate-600">{d.perAdult}</span>
+            </p>
+          )}
+          <p className="text-xs text-slate-600">{op(d.opensNewTab, operator.name)}</p>
+        </div>
+        <a
+          href={handoff.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-lg bg-sky-700 px-5 py-3 font-semibold text-white hover:bg-sky-800"
+        >
+          {op(d.openSite, operator.name)} ↗
+        </a>
+      </section>
 
       {isStale && (
         <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
@@ -125,18 +151,10 @@ export default async function SchedulePage({
       <div className="flex flex-wrap gap-3">
         <Link
           href={`/?from=${operator.routes[0].originPort.slug === "tabarca" ? "" : operator.routes[0].originPort.slug}`}
-          className="rounded-lg bg-sky-700 px-4 py-2 font-semibold text-white hover:bg-sky-800"
+          className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-100"
         >
           {d.seeBoatsFrom}
         </Link>
-        <a
-          href={operator.bookingUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-100"
-        >
-          {op(d.openSite, operator.name)} ↗
-        </a>
       </div>
 
       <p className="text-xs text-slate-500">{d.scheduleDisclaimer}</p>
