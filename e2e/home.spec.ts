@@ -49,10 +49,12 @@ test("boat cards show out and return times; time chips open booking", async ({ p
   await page.goto(`/?date=${SEED_DATE}`);
 
   // Leaf sections only — the page also wraps the whole sailings area in a <section>.
-  // Pinned card order: Transtabarca, Kontiki, then Marítimas Torrevieja.
+  // Pinned card order on a July date (three operators): Transtabarca, then
+  // gold Marítimas Torrevieja keeping the navy and red cards apart, then Kontiki.
   const cardHeadings = page.locator("section:not(:has(section)) h3");
   await expect(cardHeadings.nth(0)).toHaveText("Transtabarca");
-  await expect(cardHeadings.nth(1)).toHaveText("Cruceros Kontiki");
+  await expect(cardHeadings.nth(1)).toHaveText("Marítimas Torrevieja");
+  await expect(cardHeadings.nth(2)).toHaveText("Cruceros Kontiki");
 
   const kontikiCard = page
     .locator("section:not(:has(section))")
@@ -86,11 +88,33 @@ test("September shows all five operators, Santa Pola boats first", async ({ page
   await page.goto("/?date=2026-09-05");
   const cardHeadings = page.locator("section:not(:has(section)) h3");
   await expect(cardHeadings).toHaveCount(5);
-  await expect(cardHeadings.nth(0)).toHaveText("Transtabarca");
-  await expect(cardHeadings.nth(1)).toHaveText("Tabarkeras");
+  // Santa Pola boats first, with navy between the two orange ones; then gold
+  // Marítimas separating coral from the red Kontiki.
+  await expect(cardHeadings.nth(0)).toHaveText("Tabarkeras");
+  await expect(cardHeadings.nth(1)).toHaveText("Transtabarca");
   await expect(cardHeadings.nth(2)).toHaveText("Viajes Isla Tabarca");
-  await expect(cardHeadings.nth(3)).toHaveText("Cruceros Kontiki");
-  await expect(cardHeadings.nth(4)).toHaveText("Marítimas Torrevieja");
+  await expect(cardHeadings.nth(3)).toHaveText("Marítimas Torrevieja");
+  await expect(cardHeadings.nth(4)).toHaveText("Cruceros Kontiki");
+
+  // The rule itself: no two neighbouring cards have similar outline hues.
+  const colours = await page
+    .locator("section:not(:has(section))")
+    .filter({ has: page.locator("h3") })
+    .evaluateAll((els) => els.map((el) => getComputedStyle(el).borderTopColor));
+  const hue = (rgb: string) => {
+    const [r, g, b] = rgb.match(/\d+/g)!.map((v) => Number(v) / 255);
+    const max = Math.max(r, g, b);
+    const delta = max - Math.min(r, g, b);
+    if (delta === 0) return 0;
+    const h = max === r ? ((g - b) / delta) % 6 : max === g ? (b - r) / delta + 2 : (r - g) / delta + 4;
+    return (h * 60 + 360) % 360;
+  };
+  const hues = colours.map(hue);
+  expect(hues).toHaveLength(5);
+  for (let i = 1; i < hues.length; i++) {
+    const diff = Math.abs(hues[i] - hues[i - 1]);
+    expect(Math.min(diff, 360 - diff), `cards ${i} and ${i + 1}`).toBeGreaterThanOrEqual(25);
+  }
 });
 
 test("date past every horizon: honest empty state, no phantom 'no boats'", async ({ page }) => {
@@ -99,8 +123,8 @@ test("date past every horizon: honest empty state, no phantom 'no boats'", async
   await page.goto(`/?date=${shiftDateKey(DATA_END, 45)}`);
   const cardHeadings = page.locator("section:not(:has(section)) h3");
   await expect(cardHeadings).toHaveCount(5);
-  await expect(cardHeadings.nth(0)).toHaveText("Transtabarca");
-  await expect(cardHeadings.nth(4)).toHaveText("Marítimas Torrevieja");
+  await expect(cardHeadings.nth(0)).toHaveText("Tabarkeras");
+  await expect(cardHeadings.nth(4)).toHaveText("Cruceros Kontiki");
   await expect(page.getByText("We don't have this date's schedule yet")).toHaveCount(5);
   await expect(page.getByText(/don't have the operators' schedules for this date/)).toBeVisible();
   // Nothing bookable, and no misleading "no departures on record".
@@ -116,8 +140,8 @@ test("date past some horizons: bookable cards first, then placeholders", async (
   const cardHeadings = page.locator("section:not(:has(section)) h3");
   await expect(cardHeadings).toHaveCount(5);
   await expect(cardHeadings.nth(0)).toHaveText("Marítimas Torrevieja");
-  await expect(cardHeadings.nth(1)).toHaveText("Transtabarca");
-  await expect(cardHeadings.nth(2)).toHaveText("Tabarkeras");
+  await expect(cardHeadings.nth(1)).toHaveText("Tabarkeras");
+  await expect(cardHeadings.nth(2)).toHaveText("Transtabarca");
   await expect(cardHeadings.nth(3)).toHaveText("Viajes Isla Tabarca");
   await expect(cardHeadings.nth(4)).toHaveText("Cruceros Kontiki");
 

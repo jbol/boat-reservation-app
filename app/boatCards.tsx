@@ -17,15 +17,16 @@ export type BoatCard = {
   back: SailingWithRoute[];
 };
 
-// Fixed display order (user preference: Santa Pola boats first): the three
-// Santa Pola operators, then Kontiki (Alicante), then Marítimas
-// (Torrevieja); any future operator sorts after, by first departure.
+// Fixed display order. Two owner rules: Santa Pola boats first, and similar
+// outline colours never next to each other — so navy Transtabarca sits
+// between the two orange boats, and gold Marítimas separates coral from the
+// red Kontiki. Any future operator sorts after, by first departure.
 const CARD_ORDER = [
-  "transtabarca",
-  "tabarkeras",
-  "viajes-isla-tabarca",
-  "kontiki",
-  "maritimas-torrevieja",
+  "tabarkeras", // orange
+  "transtabarca", // navy
+  "viajes-isla-tabarca", // coral
+  "maritimas-torrevieja", // gold
+  "kontiki", // red
 ];
 
 function operatorRank(slug: string): number {
