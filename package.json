@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "db:migrate": "prisma migrate dev",
@@ -19,8 +19,8 @@
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "geist": "^1.7.2",
-    "next": "^16.2.11",
-    "nodemailer": "^9.0.3",
+    "next": "^16.3.8",
+    "nodemailer": "^10.0.13",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
@@ -28,18 +28,18 @@
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
-    "@types/nodemailer": "^8.0.1",
+    "@types/nodemailer": "^8.0.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/coverage-v8": "^4.1.11",
     "eslint": "^9",
-    "eslint-config-next": "^16.2.11",
+    "eslint-config-next": "^16.3.8",
     "husky": "^9.1.7",
     "prisma": "^6.19.3",
     "tailwindcss": "^4",
     "tsx": "^4.23.0",
     "typescript": "^5",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "engines": {
     "node": ">=20"
