@@ -161,15 +161,32 @@ test("date past some horizons: bookable cards first, then placeholders", async (
   expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
 });
 
-test("each boat card carries its operator's brand colour as an outline", async ({ page }) => {
+test("each boat card wears its operator's colour: outline, header band, buy button", async ({
+  page,
+}) => {
   await page.goto(`/?date=${SEED_DATE}`);
-  const outline = (name: string) =>
+  const card = (name: string) =>
     page
       .locator("section:not(:has(section))")
-      .filter({ has: page.getByRole("heading", { name, exact: true }) })
-      .evaluate((el) => getComputedStyle(el).borderTopColor);
-  expect(await outline("Transtabarca")).toBe("rgb(17, 57, 95)"); // navy
-  expect(await outline("Cruceros Kontiki")).toBe("rgb(211, 47, 47)"); // the red boat
+      .filter({ has: page.getByRole("heading", { name, exact: true }) });
+  const WHITE = "rgb(255, 255, 255)";
+  const INK = "rgb(15, 23, 42)";
+  // Lettering is whichever of white/ink contrasts more with the boat colour:
+  // white on navy and red, ink on gold.
+  for (const [name, colour, lettering] of [
+    ["Transtabarca", "rgb(17, 57, 95)", WHITE],
+    ["Cruceros Kontiki", "rgb(211, 47, 47)", WHITE],
+    ["Marítimas Torrevieja", "rgb(232, 171, 20)", INK],
+  ] as const) {
+    const c = card(name);
+    await expect(c).toHaveCSS("border-top-color", colour);
+    const band = c.locator("[data-band]");
+    await expect(band).toHaveCSS("background-color", colour);
+    await expect(c.getByRole("link", { name, exact: true })).toHaveCSS("color", lettering);
+    const buy = c.getByRole("link", { name: /^Buy on / });
+    await expect(buy).toHaveCSS("background-color", colour);
+    await expect(buy).toHaveCSS("color", lettering);
+  }
 });
 
 test("page never scrolls horizontally (mobile layout guard)", async ({ page }) => {

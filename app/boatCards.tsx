@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { FareType, Operator, Port, Route, Sailing } from "@prisma/client";
 import { op, type Dict, type Locale } from "@/lib/i18n";
 import { adapterFor } from "@/lib/adapters";
-import { brandColor } from "@/lib/brand";
+import { brandColor, brandOf } from "@/lib/brand";
 import { euros, isScheduleStale } from "@/lib/format";
 
 export type SailingWithRoute = Sailing & {
@@ -201,33 +201,40 @@ export function BoatCardsGrid({
             ? route.originPort.nameEs
             : route.originPort.nameEn
           : "";
+        const brand = brandOf(card.operator.slug);
         return (
           <section
             key={card.operator.id}
-            className="flex flex-col gap-3 rounded-xl border-2 bg-white p-4"
-            style={{ borderColor: brandColor(card.operator.slug) }}
+            className="flex flex-col overflow-hidden rounded-xl border-2 bg-white"
+            style={{ borderColor: brand.color }}
           >
-            <div className="flex items-start justify-between gap-2">
+            {/* Header band in the boat's colour; lettering is white or ink,
+                whichever contrasts more (lib/brand, AA-tested). */}
+            <div
+              data-band
+              className="flex items-start justify-between gap-2 px-4 py-3"
+              style={{ backgroundColor: brand.color, color: brand.on }}
+            >
               <div>
-                <h3 className="font-bold text-slate-900">
+                <h3 className="font-bold">
                   <Link
                     href={`/horarios/${card.operator.slug}`}
                     prefetch={false}
-                    className="hover:text-sky-800 hover:underline"
+                    className="hover:underline"
                     title={d.seeSchedule}
                   >
                     {card.operator.name}
                   </Link>
                 </h3>
                 {route && !returnsOnly && (
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs">
                     {d.fromPort} {portName} · {route.durationMin} min ·{" "}
                     {route.openReturn ? d.openReturn : d.dayTrip}
                   </p>
                 )}
                 {/* Returns-only view (standing on the island): say where the boat goes. */}
                 {returnsOnly && card.back[0] && (
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs">
                     → {locale === "es" ? card.back[0].route.destinationEs : card.back[0].route.destinationEn}{" "}
                     · {card.back[0].route.durationMin} min
                   </p>
@@ -235,14 +242,13 @@ export function BoatCardsGrid({
               </div>
               {adultFare && !returnsOnly && (
                 <div className="text-right">
-                  <p className="text-lg font-bold text-slate-900">
-                    {euros(adultFare.priceCents, locale)}
-                  </p>
-                  <p className="text-[10px] text-slate-500">{d.perAdult}</p>
+                  <p className="text-lg font-bold">{euros(adultFare.priceCents, locale)}</p>
+                  <p className="text-[10px]">{d.perAdult}</p>
                 </div>
               )}
             </div>
 
+            <div className="flex flex-1 flex-col gap-3 p-4">
             {card.operator.scheduleCheckedAt && (
               <p
                 className={`w-fit rounded-md px-2 py-0.5 text-[11px] font-medium ${
@@ -307,7 +313,8 @@ export function BoatCardsGrid({
                 href={adapterFor(card.operator).getHandoff(card.operator).url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block rounded-lg bg-sky-700 px-4 py-2.5 text-center font-semibold text-white hover:bg-sky-800"
+                className="block rounded-lg px-4 py-2.5 text-center font-semibold hover:brightness-95"
+                style={{ backgroundColor: brand.color, color: brand.on }}
               >
                 {op(d.openSite, card.operator.name)} ↗
               </a>
@@ -315,6 +322,7 @@ export function BoatCardsGrid({
             <p className="text-[11px] text-slate-400">
               {returnsOnly ? d.returnIncluded : d.chooseTime}
             </p>
+            </div>
           </section>
         );
       })}
