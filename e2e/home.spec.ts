@@ -34,6 +34,29 @@ test("language toggle switches ES/EN", async ({ page }) => {
   await expect(page.getByRole("heading", { name: /Todos los barcos a la Isla de Tabarca/i })).toBeVisible();
 });
 
+test("language switch redirects with a relative Location, back to the same page", async ({
+  page,
+  baseURL,
+}) => {
+  // The Location header must never carry a host: behind the hosting proxy the
+  // server's own address is internal (this once sent visitors to 0.0.0.0).
+  const back = await page.request.get("/lang/en", {
+    maxRedirects: 0,
+    headers: { referer: `${baseURL}/?date=${SEED_DATE}&from=alicante` },
+  });
+  expect(back.status()).toBe(307);
+  expect(back.headers()["location"]).toBe(`/?date=${SEED_DATE}&from=alicante`);
+
+  const noReferer = await page.request.get("/lang/es", { maxRedirects: 0 });
+  expect(noReferer.headers()["location"]).toBe("/");
+
+  const foreign = await page.request.get("/lang/en", {
+    maxRedirects: 0,
+    headers: { referer: "https://evil.example/somewhere" },
+  });
+  expect(foreign.headers()["location"]).toBe("/");
+});
+
 test("port filter narrows the list to one origin", async ({ page }) => {
   await page.goto(`/?date=${SEED_DATE}`);
   await page.getByLabel("From").selectOption("torrevieja");
