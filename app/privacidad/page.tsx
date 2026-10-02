@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "Política de privacidad — Tabarca Boats",
 };
 
-const UPDATED = "30 de agosto de 2026 / 30 August 2026";
+const UPDATED = "2 de octubre de 2026 / 2 October 2026";
 
 function H2({ children }: { children: React.ReactNode }) {
   return <h2 className="mt-6 mb-2 text-lg font-semibold text-slate-800">{children}</h2>;
@@ -48,6 +48,13 @@ export default async function PrivacyPage() {
             <strong>Technical data</strong> — your IP address, used transiently to protect
             login and signup against abuse (rate limiting); it is held briefly in memory
             and not stored in our database (legal basis: legitimate interest in security).
+          </li>
+          <li>
+            <strong>Location</strong> — if you allow it in your browser, the page works out
+            which departure port is nearest to you so it can show those boats first. The
+            calculation happens on your device: your coordinates are never sent to our
+            servers or stored (legal basis: your consent through the browser&rsquo;s
+            permission, which you can withdraw in your browser settings at any time).
           </li>
           <li>
             <strong>Emails</strong> — reservation confirmations, cancellation notices for
@@ -133,6 +140,13 @@ export default async function PrivacyPage() {
           para proteger el acceso frente a abusos (límite de intentos); se mantiene
           brevemente en memoria y no se guarda en nuestra base de datos (base legal:
           interés legítimo en la seguridad).
+        </li>
+        <li>
+          <strong>Ubicación</strong> — si lo permites en tu navegador, la página calcula
+          qué puerto de salida te queda más cerca para mostrarte primero esos barcos. El
+          cálculo se hace en tu dispositivo: tus coordenadas nunca se envían a nuestros
+          servidores ni se almacenan (base legal: tu consentimiento mediante el permiso
+          del navegador, que puedes retirar cuando quieras en sus ajustes).
         </li>
         <li>
           <strong>Emails</strong> — confirmaciones de reserva, avisos de cancelación de

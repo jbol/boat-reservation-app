@@ -12,6 +12,7 @@ import {
   shiftDateKey,
 } from "@/lib/format";
 import { BoatCardsGrid, buildBoatCards } from "./boatCards";
+import { LocationPort } from "./locationPort";
 import { operatorDataHorizons } from "@/lib/horizon";
 
 export default async function Home({
@@ -118,7 +119,10 @@ export default async function Home({
           </label>
           <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
             {d.fromLabel}
+            {/* key: remount when the filter changes (e.g. location detection),
+                since defaultValue only applies on mount. */}
             <select
+              key={from}
               name="from"
               defaultValue={from}
               className="rounded-lg border border-slate-300 px-3 py-2 text-base"
@@ -131,6 +135,21 @@ export default async function Home({
               ))}
             </select>
           </label>
+          <LocationPort
+            dateKey={dateKey}
+            from={from}
+            fromInUrl={sp.from !== undefined}
+            locale={locale}
+            portNames={Object.fromEntries(
+              ports.map((p) => [p.slug, locale === "es" ? p.nameEs : p.nameEn]),
+            )}
+            labels={{
+              use: d.geoUse,
+              near: d.geoNear,
+              island: d.geoIsland,
+              showAll: d.geoShowAll,
+            }}
+          />
           <button
             type="submit"
             className="rounded-lg bg-sky-700 px-4 py-2 font-semibold text-white hover:bg-sky-800"
