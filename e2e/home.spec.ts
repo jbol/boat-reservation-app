@@ -65,7 +65,7 @@ test("port filter narrows the list to one origin", async ({ page }) => {
   await expect(page.getByText("Marítimas Torrevieja").first()).toBeVisible();
   await expect(page.getByText("Cruceros Kontiki")).toHaveCount(0);
   // Torrevieja is a fixed-return day trip, not an open return.
-  await expect(page.getByText("Day trip (fixed return)").first()).toBeVisible();
+  await expect(page.getByText("Fixed return").first()).toBeVisible();
 });
 
 test("boat cards show out and return times; time chips open booking", async ({ page }) => {
@@ -111,6 +111,22 @@ test("September shows all five operators, Santa Pola boats first", async ({ page
   await page.goto("/?date=2026-09-05");
   const cardHeadings = page.locator("section:not(:has(section)) h3");
   await expect(cardHeadings).toHaveCount(5);
+
+  // Every header band is the same height and no operator name is cut off,
+  // however long the name or the port line.
+  const bands = await page.locator("[data-band]").evaluateAll((els) =>
+    els.map((el) => {
+      const title = el.querySelector("h3")!;
+      return {
+        height: Math.round(el.getBoundingClientRect().height),
+        clipped: title.scrollWidth > title.clientWidth,
+      };
+    }),
+  );
+  expect(bands).toHaveLength(5);
+  expect(new Set(bands.map((b) => b.height)).size, JSON.stringify(bands)).toBe(1);
+  expect(bands.filter((b) => b.clipped)).toEqual([]);
+
   // Santa Pola boats first, with navy between the two orange ones; then gold
   // Marítimas separating coral from the red Kontiki.
   await expect(cardHeadings.nth(0)).toHaveText("Tabarkeras");

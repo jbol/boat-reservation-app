@@ -210,41 +210,53 @@ export function BoatCardsGrid({
           >
             {/* Header band in the boat's colour; lettering is white or ink,
                 whichever contrasts more (lib/brand, AA-tested). */}
+            {/* One fixed shape for every boat, so all bands are the same height
+                whatever the name length: a single-line name, the details on
+                their own full-width line(s), then the price row. Nothing
+                competes for width, so nothing wraps unevenly or gets cut. */}
             <div
               data-band
-              className="flex items-start justify-between gap-2 px-4 py-3"
+              className="px-4 py-3"
               style={{ backgroundColor: brand.color, color: brand.on }}
             >
-              <div>
-                <h3 className="font-bold">
-                  <Link
-                    href={`/horarios/${card.operator.slug}`}
-                    prefetch={false}
-                    className="hover:underline"
-                    title={d.seeSchedule}
-                  >
-                    {card.operator.name}
-                  </Link>
-                </h3>
-                {route && !returnsOnly && (
-                  <p className="text-xs">
-                    {d.fromPort} {portName} · {route.durationMin} min ·{" "}
-                    {route.openReturn ? d.openReturn : d.dayTrip}
-                  </p>
-                )}
+              <h3 className="truncate font-bold">
+                <Link
+                  href={`/horarios/${card.operator.slug}`}
+                  prefetch={false}
+                  className="hover:underline"
+                  title={d.seeSchedule}
+                >
+                  {card.operator.name}
+                </Link>
+              </h3>
+              {/* Two lines in the narrow three-column layout; reserve them so
+                  a shorter port name can't make one band shorter. */}
+              <p className="line-clamp-2 text-xs lg:min-h-8">
                 {/* Returns-only view (standing on the island): say where the boat goes. */}
-                {returnsOnly && card.back[0] && (
-                  <p className="text-xs">
-                    → {locale === "es" ? card.back[0].route.destinationEs : card.back[0].route.destinationEn}{" "}
-                    · {card.back[0].route.durationMin} min
-                  </p>
-                )}
-              </div>
+                {returnsOnly
+                  ? card.back[0] && (
+                      <>
+                        →{" "}
+                        {locale === "es"
+                          ? card.back[0].route.destinationEs
+                          : card.back[0].route.destinationEn}{" "}
+                        · {card.back[0].route.durationMin} min
+                      </>
+                    )
+                  : route && (
+                      <>
+                        {d.fromPort} {portName} · {route.durationMin} min ·{" "}
+                        {route.openReturn ? d.openReturn : d.dayTrip}
+                      </>
+                    )}
+              </p>
               {adultFare && !returnsOnly && (
-                <div className="text-right">
-                  <p className="text-lg font-bold">{euros(adultFare.priceCents, locale)}</p>
-                  <p className="text-[10px]">{d.perAdult}</p>
-                </div>
+                <p className="mt-1 flex items-baseline justify-between gap-2">
+                  <span className="text-[11px]">{d.perAdult}</span>
+                  <span className="text-lg leading-6 font-bold">
+                    {euros(adultFare.priceCents, locale)}
+                  </span>
+                </p>
               )}
             </div>
 
