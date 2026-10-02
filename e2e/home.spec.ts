@@ -68,6 +68,19 @@ test("port filter narrows the list to one origin", async ({ page }) => {
   await expect(page.getByText("Fixed return").first()).toBeVisible();
 });
 
+test("port dropdown draws its own inset chevron instead of the edge-hugging native arrow", async ({
+  page,
+}) => {
+  await page.goto(`/?date=${SEED_DATE}`);
+  const select = page.getByLabel("From");
+  await expect(select).toHaveCSS("appearance", "none");
+  // Room reserved for the chevron, which sits 12px in from the right edge
+  // and vertically centred.
+  await expect(select).toHaveCSS("padding-right", "40px");
+  await expect(select).toHaveCSS("background-position", /calc\(100% - 12px\) 50%|right 12px center/);
+  expect(await select.evaluate((el) => getComputedStyle(el).backgroundImage)).toContain("svg");
+});
+
 test("boat cards show out and return times; time chips open booking", async ({ page }) => {
   await page.goto(`/?date=${SEED_DATE}`);
 

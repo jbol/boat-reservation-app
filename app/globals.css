@@ -17,3 +17,18 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
+
+/* The browser's own dropdown arrow hugs the right border once a select has
+   custom padding and rounded corners. Draw our own chevron instead: inset
+   from the edge and vertically centred, the same in every browser.
+   Deliberately outside any @layer so it wins over padding utilities (px-3)
+   — otherwise the text would run underneath the chevron. */
+select {
+  appearance: none;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem 1rem;
+  padding-right: 2.5rem;
+}
