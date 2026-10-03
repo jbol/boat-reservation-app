@@ -14,7 +14,7 @@ test("book → hand-off intent → attach reference → confirmed", async ({ pag
   const quickBuy = page.getByRole("link", { name: /^Buy on / });
   await expect(quickBuy).toHaveAttribute("target", "_blank");
   await expect(quickBuy).toHaveAttribute("rel", /noopener/);
-  await expect(quickBuy).toHaveAttribute("href", /^https?:\/\//);
+  await expect(quickBuy).toHaveAttribute("href", /^\/go\/[a-z-]+\?source=booking&sailing=/);
 
   // Saving the trip is optional and collapsed for guests.
   await expect(page.getByLabel("Full name")).toBeHidden();

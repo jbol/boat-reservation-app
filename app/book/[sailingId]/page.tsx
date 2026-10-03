@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { getDict, op } from "@/lib/i18n";
 import { getSessionCustomer } from "@/lib/customerAuth";
 import { createReservation } from "@/lib/actions";
-import { adapterFor } from "@/lib/adapters";
 import { euros, formatDateKey } from "@/lib/format";
 
 export default async function BookPage({
@@ -32,7 +31,6 @@ export default async function BookPage({
 
   const route = sailing.route;
   const operator = route.operator;
-  const handoff = adapterFor(operator).getHandoff(operator);
   const portName = locale === "es" ? route.originPort.nameEs : route.originPort.nameEn;
   const returnNote = locale === "es" ? route.returnNoteEs : route.returnNoteEn;
   const fareSummary = route.fares
@@ -67,7 +65,7 @@ export default async function BookPage({
       <section className="space-y-3 rounded-xl border border-sky-200 bg-sky-50 p-4">
         {fareSummary && <p className="text-sm text-slate-700">{fareSummary}</p>}
         <a
-          href={handoff.url}
+          href={`/go/${operator.slug}?source=booking&sailing=${sailing.id}`}
           target="_blank"
           rel="noopener noreferrer"
           className="block w-full rounded-lg bg-sky-700 px-4 py-3 text-center text-lg font-semibold text-white hover:bg-sky-800"

@@ -204,6 +204,8 @@ export default async function Home({
           <BoatCardsGrid
             cards={cards}
             placeholders={placeholders}
+            dateKey={dateKey}
+            from={from}
             locale={locale}
             d={d}
             returnsOnly={returnsOnly}

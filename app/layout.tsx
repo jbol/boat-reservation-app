@@ -6,6 +6,7 @@ import { GeistMono } from "geist/font/mono";
 import Link from "next/link";
 import { getDict } from "@/lib/i18n";
 import { getSessionCustomer } from "@/lib/customerAuth";
+import { PageViewBeacon } from "./pageView";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -65,6 +66,7 @@ export default async function RootLayout({
             </nav>
           </div>
         </header>
+        <PageViewBeacon />
         <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">{children}</main>
         <footer className="border-t border-slate-200 bg-white">
           <div className="mx-auto max-w-3xl px-4 py-4 text-xs text-slate-500">

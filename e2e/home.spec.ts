@@ -115,7 +115,7 @@ test("quick buy: cards and time rows link straight to the operator's checkout", 
   expect(await cardBuy.count()).toBeGreaterThanOrEqual(3);
   await expect(cardBuy.first()).toHaveAttribute("target", "_blank");
   await expect(cardBuy.first()).toHaveAttribute("rel", /noopener/);
-  await expect(cardBuy.first()).toHaveAttribute("href", /^https?:\/\//);
+  await expect(cardBuy.first()).toHaveAttribute("href", /^\/go\/[a-z-]+\?source=card&date=/);
   // The old by-time list is gone: the cards are the whole page.
   await expect(page.getByRole("listitem")).toHaveCount(0);
 });

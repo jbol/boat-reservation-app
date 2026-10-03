@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "Política de privacidad — Tabarca Boats",
 };
 
-const UPDATED = "2 de octubre de 2026 / 2 October 2026";
+const UPDATED = "3 de octubre de 2026 / 3 October 2026";
 
 function H2({ children }: { children: React.ReactNode }) {
   return <h2 className="mt-6 mb-2 text-lg font-semibold text-slate-800">{children}</h2>;
@@ -57,6 +57,15 @@ export default async function PrivacyPage() {
             permission, which you can withdraw in your browser settings at any time).
           </li>
           <li>
+            <strong>Usage statistics</strong> — we count visits to each page and clicks on each
+            operator&rsquo;s buy button, to understand how the site is used and how many buyers
+            we send each operator. This uses no cookies and no third-party service: we store
+            the page, the date, the device type (phone or computer), the site you came from,
+            and a code derived from your connection that changes every day and cannot identify
+            you or follow you across days. Your IP address is not stored (legal basis:
+            legitimate interest in measuring and improving the service).
+          </li>
+          <li>
             <strong>Emails</strong> — reservation confirmations, cancellation notices for
             sailings you hold a reservation on, and reservation links you request.
           </li>
@@ -69,7 +78,7 @@ export default async function PrivacyPage() {
             the boat operator&rsquo;s own website; payment happens entirely there.
           </li>
           <li>We do not send your personal data to the boat operators.</li>
-          <li>We do not sell data, and we currently use no advertising or analytics trackers.</li>
+          <li>We do not sell data, and we use no advertising trackers or third-party analytics.</li>
         </ul>
 
         <H2>Cookies</H2>
@@ -149,6 +158,15 @@ export default async function PrivacyPage() {
           del navegador, que puedes retirar cuando quieras en sus ajustes).
         </li>
         <li>
+          <strong>Estadísticas de uso</strong> — contamos las visitas a cada página y los clics
+          en el botón de compra de cada naviera, para saber qué uso tiene la web y cuántos
+          compradores enviamos a cada naviera. Lo hacemos sin cookies ni servicios de terceros:
+          guardamos la página, la fecha, el tipo de dispositivo (móvil u ordenador), el sitio
+          de procedencia y un código derivado de tu conexión que cambia cada día y no permite
+          identificarte ni seguirte entre días. No guardamos tu dirección IP (base legal:
+          interés legítimo en medir y mejorar el servicio).
+        </li>
+        <li>
           <strong>Emails</strong> — confirmaciones de reserva, avisos de cancelación de
           salidas en las que tengas reserva y enlaces de reserva que solicites.
         </li>
@@ -161,7 +179,7 @@ export default async function PrivacyPage() {
           compran en la web oficial de la naviera; el pago se realiza íntegramente allí.
         </li>
         <li>No enviamos tus datos personales a las navieras.</li>
-        <li>No vendemos datos y actualmente no usamos rastreadores de publicidad ni analítica.</li>
+        <li>No vendemos datos y no usamos rastreadores de publicidad ni analítica de terceros.</li>
       </ul>
 
       <H2>Cookies</H2>

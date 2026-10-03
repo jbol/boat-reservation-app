@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { FareType, Operator, Port, Route, Sailing } from "@prisma/client";
 import { op, type Dict, type Locale } from "@/lib/i18n";
-import { adapterFor } from "@/lib/adapters";
 import { brandColor, brandOf } from "@/lib/brand";
 import { euros, isScheduleStale } from "@/lib/format";
 
@@ -149,6 +148,8 @@ function NotYetPublishedCard({
 export function BoatCardsGrid({
   cards,
   placeholders = [],
+  dateKey,
+  from,
   locale,
   d,
   returnsOnly,
@@ -158,6 +159,9 @@ export function BoatCardsGrid({
   cards: BoatCard[];
   /** Verified operators with no data for the date because it's past their horizon. */
   placeholders?: SchedulePlaceholder[];
+  /** Context passed along with buy clicks, for the stats. */
+  dateKey: string;
+  from: string;
   locale: Locale;
   d: Dict;
   /** "Desde: Isla de Tabarca" mode — emphasize returns, nothing bookable. */
@@ -324,7 +328,7 @@ export function BoatCardsGrid({
                 via the time chips. */}
             {!returnsOnly && route && (
               <a
-                href={adapterFor(card.operator).getHandoff(card.operator).url}
+                href={`/go/${card.operator.slug}?source=card&date=${dateKey}${from ? `&from=${from}` : ""}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 title={op(d.openSite, card.operator.name)}

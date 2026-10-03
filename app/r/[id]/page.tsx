@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getDict, op } from "@/lib/i18n";
-import { adapterFor } from "@/lib/adapters";
 import { attachBookingRef, cancelReservation } from "@/lib/actions";
 import { euros, formatDateKey } from "@/lib/format";
 
@@ -37,7 +36,6 @@ export default async function ReservationPage({
   const { sailing } = reservation;
   const route = sailing.route;
   const operator = route.operator;
-  const handoff = adapterFor(operator).getHandoff(operator);
   const portName = locale === "es" ? route.originPort.nameEs : route.originPort.nameEn;
   const returnNote = locale === "es" ? route.returnNoteEs : route.returnNoteEn;
   const statusLabel = d[`status${reservation.status}` as keyof typeof d] as string;
@@ -111,7 +109,7 @@ export default async function ReservationPage({
             <li>
               <p>{op(d.step1, operator.name)}</p>
               <a
-                href={handoff.url}
+                href={`/go/${operator.slug}?source=reservation&sailing=${sailing.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-2 inline-block rounded-lg bg-sky-700 px-4 py-3 font-semibold text-white hover:bg-sky-800"

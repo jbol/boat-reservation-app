@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getDict, op } from "@/lib/i18n";
-import { adapterFor } from "@/lib/adapters";
 import { timesOf } from "@/lib/timetables";
 import {
   euros,
@@ -42,7 +41,6 @@ export default async function SchedulePage({
         year: "numeric",
       })
     : "—";
-  const handoff = adapterFor(operator).getHandoff(operator);
   const adultFare = operator.routes
     .find((r) => r.originPort.slug !== "tabarca")
     ?.fares.find((f) => f.code === "adult");
@@ -84,7 +82,7 @@ export default async function SchedulePage({
           <p className="text-xs text-slate-600">{op(d.opensNewTab, operator.name)}</p>
         </div>
         <a
-          href={handoff.url}
+          href={`/go/${operator.slug}?source=schedule`}
           target="_blank"
           rel="noopener noreferrer"
           className="rounded-lg bg-sky-700 px-5 py-3 font-semibold text-white hover:bg-sky-800"

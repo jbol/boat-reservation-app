@@ -36,7 +36,7 @@ export function LoginCard({ error }: { error?: string }) {
 export function AdminNav({
   active,
 }: {
-  active: "list" | "new" | "sailings" | "timetables";
+  active: "list" | "new" | "sailings" | "timetables" | "stats";
 }) {
   const base = "rounded-lg px-3 py-2 text-sm font-semibold";
   return (
@@ -58,6 +58,12 @@ export function AdminNav({
         className={`${base} ${active === "timetables" ? "bg-sky-700 text-white" : "border border-slate-300 hover:bg-slate-100"}`}
       >
         Timetables
+      </Link>
+      <Link
+        href="/admin/stats"
+        className={`${base} ${active === "stats" ? "bg-sky-700 text-white" : "border border-slate-300 hover:bg-slate-100"}`}
+      >
+        Stats
       </Link>
       <Link
         href="/admin/new"

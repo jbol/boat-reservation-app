@@ -8,9 +8,14 @@ export function euros(cents: number, locale: Locale): string {
   }).format(cents / 100);
 }
 
-/** Today's date key ("YYYY-MM-DD") in the boats' timezone, Europe/Madrid. */
+/** Date key ("YYYY-MM-DD") of an instant in the boats' timezone, Europe/Madrid. */
+export function madridDateKey(date: Date): string {
+  return date.toLocaleDateString("en-CA", { timeZone: "Europe/Madrid" });
+}
+
+/** Today's date key in Europe/Madrid. */
 export function madridTodayKey(): string {
-  return new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Madrid" });
+  return madridDateKey(new Date());
 }
 
 /** Current time "HH:MM" in Europe/Madrid — for dimming already-departed boats. */

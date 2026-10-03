@@ -171,3 +171,37 @@ enum ReservationSource {
   HANDOFF
   MANUAL
 }
+
+/// One row per click on a "Comprar" hand-off, so we can show each operator
+/// how many buyers we send them. No IP, no cookie, no visitor identifier.
+model OutboundClick {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  operatorId String
+  source     String // card | booking | schedule | reservation | unknown
+  dateKey    String? // the day the visitor was looking at
+  fromPort   String? // the "Desde" filter in effect
+  sailingId  String?
+  locale     String
+  device     String // mobile | desktop
+
+  @@index([createdAt])
+  @@index([operatorId, createdAt])
+}
+
+/// First-party page views: no cookies, no third parties, no IP stored. The
+/// visitor hash is salted per day so a browser counts once per day and days
+/// cannot be linked.
+model PageView {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  path         String
+  fromPort     String?
+  referrerHost String?
+  locale       String
+  device       String
+  visitorHash  String
+
+  @@index([createdAt])
+  @@index([path, createdAt])
+}
