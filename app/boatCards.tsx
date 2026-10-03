@@ -318,17 +318,20 @@ export function BoatCardsGrid({
                   </p>
                 );
               })()}
-            {/* Quick buy: one click to the operator's own checkout. Saving a
-                trip here stays optional via the time chips. */}
+            {/* Quick buy: one click to the operator's own checkout. The label
+                is the same short line on every card so the buttons match (the
+                band already names the operator); saving a trip stays optional
+                via the time chips. */}
             {!returnsOnly && route && (
               <a
                 href={adapterFor(card.operator).getHandoff(card.operator).url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block rounded-lg px-4 py-2.5 text-center font-semibold hover:brightness-95"
+                title={op(d.openSite, card.operator.name)}
+                className="block rounded-lg px-4 py-2.5 text-center font-semibold whitespace-nowrap hover:brightness-95"
                 style={{ backgroundColor: brand.color, color: brand.on }}
               >
-                {op(d.openSite, card.operator.name)} ↗
+                {d.buyTickets} ↗
               </a>
             )}
             <p className="text-[11px] text-slate-400">

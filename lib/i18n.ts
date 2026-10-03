@@ -27,6 +27,7 @@ export const dictionaries = {
     outboundLabel: "Ida",
     returnLabel: "Vuelta",
     chooseTime: "Pulsa una hora de ida para guardar el viaje",
+    buyTickets: "Comprar billetes",
     saveTrip: "Guardar viaje",
     saveTripTitle: "Guardar este viaje (opcional)",
     saveTripHint:
@@ -159,6 +160,7 @@ export const dictionaries = {
     outboundLabel: "Out",
     returnLabel: "Return",
     chooseTime: "Tap an outbound time to save the trip",
+    buyTickets: "Buy tickets",
     saveTrip: "Save trip",
     saveTripTitle: "Save this trip (optional)",
     saveTripHint:

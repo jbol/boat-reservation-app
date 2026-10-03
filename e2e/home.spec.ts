@@ -109,9 +109,9 @@ test("quick buy: cards and time rows link straight to the operator's checkout", 
   page,
 }) => {
   await page.goto(`/?date=${SEED_DATE}`);
-  // One "Buy on <operator>" button per boat card, opening the operator's own
-  // site in a new tab — no form in between.
-  const cardBuy = page.locator("section:not(:has(section))").getByRole("link", { name: /^Buy on / });
+  // One "Buy tickets" button per boat card, opening the operator's own site
+  // in a new tab — no form in between.
+  const cardBuy = page.locator("section:not(:has(section))").getByRole("link", { name: "Buy tickets ↗" });
   expect(await cardBuy.count()).toBeGreaterThanOrEqual(3);
   await expect(cardBuy.first()).toHaveAttribute("target", "_blank");
   await expect(cardBuy.first()).toHaveAttribute("rel", /noopener/);
@@ -139,6 +139,14 @@ test("September shows all five operators, Santa Pola boats first", async ({ page
   expect(bands).toHaveLength(5);
   expect(new Set(bands.map((b) => b.height)).size, JSON.stringify(bands)).toBe(1);
   expect(bands.filter((b) => b.clipped)).toEqual([]);
+
+  // …and so are the buy buttons: one short label, one line, one height.
+  const buttonHeights = await page
+    .locator("section:not(:has(section))")
+    .getByRole("link", { name: "Buy tickets ↗" })
+    .evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().height)));
+  expect(buttonHeights).toHaveLength(5);
+  expect(new Set(buttonHeights).size, buttonHeights.join(", ")).toBe(1);
 
   // Santa Pola boats first, with navy between the two orange ones; then gold
   // Marítimas separating coral from the red Kontiki.
@@ -235,7 +243,7 @@ test("each boat card wears its operator's colour: outline, header band, buy butt
     const band = c.locator("[data-band]");
     await expect(band).toHaveCSS("background-color", colour);
     await expect(c.getByRole("link", { name, exact: true })).toHaveCSS("color", lettering);
-    const buy = c.getByRole("link", { name: /^Buy on / });
+    const buy = c.getByRole("link", { name: "Buy tickets ↗" });
     await expect(buy).toHaveCSS("background-color", colour);
     await expect(buy).toHaveCSS("color", lettering);
   }
@@ -258,6 +266,6 @@ test("Tabarca option shows return boats, informational only", async ({ page }) =
   // …but nothing is bookable or buyable from the island: the return is
   // covered by the round-trip ticket.
   await expect(page.locator('a[href^="/book/"]')).toHaveCount(0);
-  await expect(page.getByRole("link", { name: /^Buy on / })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /^Buy (tickets|on)/ })).toHaveCount(0);
   await expect(page.getByText("Included in your round-trip ticket").first()).toBeVisible();
 });
